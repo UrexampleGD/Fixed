@@ -1,7 +1,7 @@
 -- # Credits to @187 for the actual code
 -- # This was just a fixed version with some improvement.
 -- # If this thing has bugs, report it :)
--- # Have fun using this skidded shit thing!
+-- # Have fun using this skidded thing!
 -- # Your Welcome!
 
 
