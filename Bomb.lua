@@ -1,3 +1,12 @@
+-- # Credits to @187 for the actual code
+-- # This was just a fixed version with some improvement.
+-- # If this thing has bugs, report it :)
+-- # Have fun using this skidded shit thing!
+-- # Your Welcome!
+
+
+
+
 local table_insert = table.insert
 
 local Maid = {}
