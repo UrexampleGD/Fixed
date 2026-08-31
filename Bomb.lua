@@ -633,7 +633,7 @@ end
 
 local function UnequipBomb()
     task.spawn(function()
-        task.wait(0.5)
+        task.wait(0)
         local character = LocalPlayer.Character
         if character then
             for _, bombName in ipairs(BOMB_NAMES) do
@@ -919,7 +919,7 @@ end
 
 local function UnequipGoldBomb()
     task.spawn(function()
-        task.wait(0.5)
+        task.wait(0)
         local character = LocalPlayer.Character
         if character then
             local bomb = character:FindFirstChild(GOLD_BOMB_NAME)
