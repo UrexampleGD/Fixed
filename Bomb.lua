@@ -780,6 +780,8 @@ BombJumpMaid:GiveTasks(
         if autoGetBomb then
             task.wait(0.2)
             pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb") end)
+            task.wait(0.1) -- FIX: wait for it to appear
+            UnequipBomb()  -- FIX: unequip it immediately
         end
     end)
 )
@@ -787,10 +789,13 @@ BombJumpMaid:GiveTasks(
 section:AddLabel("Bomb Jump Options")
 section:AddToggle("Enable Auto Bomb Jump", function(bool) bombJumpEnabled = bool end)
 
+-- FIX: Auto-Get Fake Bomb with auto-unequip
 section:AddToggle("Auto-Get Fake Bomb", function(bool)
     autoGetBomb = bool
     if bool then
         pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb") end)
+        task.wait(0.1)
+        UnequipBomb()
     end
 end)
 
@@ -854,7 +859,7 @@ local gbjBigButtonSize = 200
 local gbjBindButtonSize = 0.11
 local gbjBindButton = nil
 
--- FIXED: Changed "GoldBomb" to "GoldFakeBomb"
+-- FIXED: Correct gold bomb name
 local GOLD_BOMB_NAME = "GoldFakeBomb"
 
 local GoldBombJumpMaid = Maid.new()
@@ -941,7 +946,7 @@ local function GetAnyGoldBomb()
         end
     end
 
-    -- FIXED: Changed "GoldBomb" to "GoldFakeBomb"
+    -- FIXED: Correct remote name
     local success = pcall(function()
         Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb")
     end)
@@ -1047,8 +1052,9 @@ GoldBombJumpMaid:GiveTasks(
         gbjJustRespawned = false
         if autoGetGoldBomb then
             task.wait(0.2)
-            -- FIXED: Changed "GoldBomb" to "GoldFakeBomb"
             pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb") end)
+            task.wait(0.1) -- FIX: wait for it to appear
+            UnequipGoldBomb()  -- FIX: unequip it immediately
         end
     end)
 )
@@ -1056,11 +1062,13 @@ GoldBombJumpMaid:GiveTasks(
 gbjSection:AddLabel("Gold Bomb Jump Options")
 gbjSection:AddToggle("Enable Auto Gold Bomb Jump", function(bool) goldBombJumpEnabled = bool end)
 
+-- FIX: Auto-Get Gold Bomb with auto-unequip
 gbjSection:AddToggle("Auto-Get Gold Bomb", function(bool)
     autoGetGoldBomb = bool
     if bool then
-        -- FIXED: Changed "GoldBomb" to "GoldFakeBomb"
         pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb") end)
+        task.wait(0.1)
+        UnequipGoldBomb()
     end
 end)
 
