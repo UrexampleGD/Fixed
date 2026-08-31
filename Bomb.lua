@@ -631,9 +631,9 @@ local function MakeCharacterJump()
     end
 end
 
+-- FIX: UnequipBomb now no delay
 local function UnequipBomb()
     task.spawn(function()
-        task.wait(0)
         local character = LocalPlayer.Character
         if character then
             for _, bombName in ipairs(BOMB_NAMES) do
@@ -780,8 +780,8 @@ BombJumpMaid:GiveTasks(
         if autoGetBomb then
             task.wait(0.2)
             pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb") end)
-            task.wait(0.1) -- FIX: wait for it to appear
-            UnequipBomb()  -- FIX: unequip it immediately
+            task.wait(0.1)
+            UnequipBomb()
         end
     end)
 )
@@ -789,7 +789,6 @@ BombJumpMaid:GiveTasks(
 section:AddLabel("Bomb Jump Options")
 section:AddToggle("Enable Auto Bomb Jump", function(bool) bombJumpEnabled = bool end)
 
--- FIX: Auto-Get Fake Bomb with auto-unequip
 section:AddToggle("Auto-Get Fake Bomb", function(bool)
     autoGetBomb = bool
     if bool then
@@ -859,7 +858,7 @@ local gbjBigButtonSize = 200
 local gbjBindButtonSize = 0.11
 local gbjBindButton = nil
 
--- FIXED: Correct gold bomb name
+-- FIXED.
 local GOLD_BOMB_NAME = "GoldFakeBomb"
 
 local GoldBombJumpMaid = Maid.new()
@@ -874,6 +873,7 @@ local function GBJResetCooldown()
     end
 end
 
+-- FIX: Gold cooldown now 9 seconds
 local function GBJStartCooldown()
     gbjOnCooldown = true
     gbjDebounce = false
@@ -884,7 +884,7 @@ local function GBJStartCooldown()
     end
 
     task.spawn(function()
-        for i = 4, 1, -1 do
+        for i = 9, 1, -1 do   -- changed from 4 to 9
             if not gbjOnCooldown then break end
             local bigBtn = BBSystem.Buttons["goldbombjump_big"]
             if bigBtn then bigBtn.Text = tostring(i) end
@@ -919,7 +919,6 @@ end
 
 local function UnequipGoldBomb()
     task.spawn(function()
-        task.wait(0)
         local character = LocalPlayer.Character
         if character then
             local bomb = character:FindFirstChild(GOLD_BOMB_NAME)
@@ -946,7 +945,6 @@ local function GetAnyGoldBomb()
         end
     end
 
-    -- FIXED: Correct remote name
     local success = pcall(function()
         Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb")
     end)
@@ -1053,8 +1051,8 @@ GoldBombJumpMaid:GiveTasks(
         if autoGetGoldBomb then
             task.wait(0.2)
             pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb") end)
-            task.wait(0.1) -- FIX: wait for it to appear
-            UnequipGoldBomb()  -- FIX: unequip it immediately
+            task.wait(0.1)
+            UnequipGoldBomb()
         end
     end)
 )
@@ -1062,7 +1060,6 @@ GoldBombJumpMaid:GiveTasks(
 gbjSection:AddLabel("Gold Bomb Jump Options")
 gbjSection:AddToggle("Enable Auto Gold Bomb Jump", function(bool) goldBombJumpEnabled = bool end)
 
--- FIX: Auto-Get Gold Bomb with auto-unequip
 gbjSection:AddToggle("Auto-Get Gold Bomb", function(bool)
     autoGetGoldBomb = bool
     if bool then
