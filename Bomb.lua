@@ -637,7 +637,6 @@ local function MakeCharacterJump()
     end
 end
 
--- FIX: UnequipBomb now no delay
 local function UnequipBomb()
     task.spawn(function()
         local character = LocalPlayer.Character
@@ -668,6 +667,7 @@ local function GetAnyBomb()
             local bomb = backpack:FindFirstChild(bombName)
             if bomb then
                 bomb.Parent = character
+                task.wait(0.05)
                 return true, bomb
             end
         end
@@ -685,6 +685,7 @@ local function GetAnyBomb()
                 bomb = backpack:FindFirstChild(bombName)
                 if bomb then
                     bomb.Parent = character
+                    task.wait(0.05)
                     return true, bomb
                 end
             end
@@ -864,7 +865,6 @@ local gbjBigButtonSize = 200
 local gbjBindButtonSize = 0.11
 local gbjBindButton = nil
 
--- FIXED.
 local GOLD_BOMB_NAME = "GoldFakeBomb"
 
 local GoldBombJumpMaid = Maid.new()
@@ -879,7 +879,6 @@ local function GBJResetCooldown()
     end
 end
 
--- FIX: Gold cooldown now 9 seconds
 local function GBJStartCooldown()
     gbjOnCooldown = true
     gbjDebounce = false
@@ -890,7 +889,7 @@ local function GBJStartCooldown()
     end
 
     task.spawn(function()
-        for i = 9, 1, -1 do   -- changed from 4 to 9
+        for i = 9, 1, -1 do
             if not gbjOnCooldown then break end
             local bigBtn = BBSystem.Buttons["goldbombjump_big"]
             if bigBtn then bigBtn.Text = tostring(i) end
@@ -947,6 +946,7 @@ local function GetAnyGoldBomb()
         bomb = backpack:FindFirstChild(GOLD_BOMB_NAME)
         if bomb then
             bomb.Parent = character
+            task.wait(0.05)
             return true, bomb
         end
     end
@@ -964,6 +964,7 @@ local function GetAnyGoldBomb()
                 bomb = backpack:FindFirstChild(GOLD_BOMB_NAME)
                 if bomb then
                     bomb.Parent = character
+                    task.wait(0.05)
                     return true, bomb
                 end
             end
