@@ -1154,6 +1154,10 @@ local pmpBigButtonSize = 200
 local pmpBindButtonSize = 0.11
 local pmpBindButton = nil
 
+-- New state for "Click Me First" waiting period
+local pmpWaitingToActivate = false
+local pmpActivationTimer = nil
+
 local PUMPKIN_NAME = "Pumpkin2025"
 
 local PumpkinJumpMaid = Maid.new()
@@ -1178,7 +1182,7 @@ local function PMPStartCooldown()
     end
 
     task.spawn(function()
-        for i = 50, 1, -1 do  -- cooldown 50 seconds
+        for i = 42, 1, -1 do  -- cooldown 42 seconds
             if not pmpOnCooldown then break end
             local bigBtn = BBSystem.Buttons["pumpkinjump_big"]
             if bigBtn then bigBtn.Text = tostring(i) end
@@ -1267,6 +1271,8 @@ end
 local function FastPumpkinJump()
     if not IsPlayerInAir() then return end
     if pmpOnCooldown or pmpDebounce or pmpJustRespawned then return end
+    if pmpWaitingToActivate then return end  -- Block during "Click Me First" period
+
     pmpDebounce = true
 
     local success, bomb = GetAnyPumpkin()
@@ -1305,6 +1311,35 @@ local function FastPumpkinJump()
     end)
 end
 
+-- Function to start the "Click Me First" sequence when autoGetPumpkin is enabled
+local function StartPumpkinActivation()
+    if pmpActivationTimer then
+        task.cancel(pmpActivationTimer)
+        pmpActivationTimer = nil
+    end
+
+    pmpWaitingToActivate = true
+    -- Update button texts to "Click Me First"
+    local bigBtn = BBSystem.Buttons["pumpkinjump_big"]
+    if bigBtn then bigBtn.Text = "Click Me First" end
+    if pmpBindButton then
+        BindableButtons.UpdateBButtonText("pumpkinjump_bind", "Click Me First", false, false, true)
+    end
+
+    -- Start timer for 2 seconds
+    pmpActivationTimer = task.spawn(function()
+        task.wait(2)
+        pmpWaitingToActivate = false
+        pmpActivationTimer = nil
+        -- Reset button texts to normal (if not on cooldown)
+        if not pmpOnCooldown then
+            PMPResetCooldown()
+        else
+            -- If on cooldown, cooldown loop will update text
+        end
+    end)
+end
+
 local function IsHoldingPumpkin()
     local character = LocalPlayer.Character
     if not character then return false end
@@ -1330,7 +1365,7 @@ PumpkinJumpMaid:GiveTasks(
         if gp then pmpActiveTouches[input] = nil return end
         local data = pmpActiveTouches[input]
         if data and not data.moved and tick() - data.startTime <= TAP_TIME_THRESHOLD then
-            if pumpkinJumpEnabled and not pmpOnCooldown and not pmpDebounce then
+            if pumpkinJumpEnabled and not pmpOnCooldown and not pmpDebounce and not pmpWaitingToActivate then
                 if IsHoldingPumpkin() and IsPlayerInAir() then
                     FastPumpkinJump()
                 end
@@ -1349,6 +1384,8 @@ PumpkinJumpMaid:GiveTasks(
             pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("Pumpkin2025") end)
             task.wait(0.1)
             UnequipPumpkin()
+            -- Start activation sequence
+            StartPumpkinActivation()
         end
     end)
 )
@@ -1362,6 +1399,16 @@ pumpkinSection:AddToggle("Auto-Get Pumpkin", function(bool)
         pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("Pumpkin2025") end)
         task.wait(0.1)
         UnequipPumpkin()
+        -- Start activation sequence (2-second wait with "Click Me First")
+        StartPumpkinActivation()
+    else
+        -- If disabled, cancel any pending activation and reset state
+        if pmpActivationTimer then
+            task.cancel(pmpActivationTimer)
+            pmpActivationTimer = nil
+        end
+        pmpWaitingToActivate = false
+        PMPResetCooldown()
     end
 end)
 
@@ -1369,7 +1416,6 @@ pumpkinSection:AddToggle("Enable PJ Big Button", function(e)
     if e then
         local btn = AddBigButton("pumpkinjump_big", "Pumpkin Jump", FastPumpkinJump, false)
         if btn then
-            -- Change gradient to green
             local stroke = btn:FindFirstChild("UIStroke")
             if stroke then
                 local grad = stroke:FindFirstChild("UIGradient")
@@ -1377,7 +1423,6 @@ pumpkinSection:AddToggle("Enable PJ Big Button", function(e)
                     grad.Color = __PUMPKIN_GRAD_SEQ
                 end
             end
-            -- Change ripple color to green
             local ripple = btn:FindFirstChild("@ripple")
             if ripple then
                 ripple.BackgroundColor3 = __RGB(0, 255, 0)
@@ -1404,7 +1449,6 @@ pumpkinSection:AddToggle("Enable PJ Bind Button", function(e)
         if pmpBindButton then
             local screen = Services.Workspace.CurrentCamera.ViewportSize
             pmpBindButton.Size = __UD2(pmpBindButtonSize * (screen.Y / screen.X), 0, pmpBindButtonSize, 0)
-            -- Change colors to green
             local stroke = pmpBindButton:FindFirstChild("@Stroke")
             if stroke then
                 stroke.Color = __PUMPKIN_NORMAL_COLOR
@@ -1431,6 +1475,6 @@ end)
 
 pumpkinSection:AddKeybind("Pumpkin Jump Keybind", "P", FastPumpkinJump)
 
-end  -- end of Murder Mystery Modded
+end
 
-end  -- end of main game check
+end
