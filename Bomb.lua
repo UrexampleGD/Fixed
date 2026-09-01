@@ -4,9 +4,6 @@
 -- # Have fun using this skidded thing!
 -- # Your Welcome!
 
-
-
-
 local table_insert = table.insert
 
 local Maid = {}
