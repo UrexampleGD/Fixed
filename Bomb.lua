@@ -528,7 +528,7 @@ local CONFIG = {
     MinSize = 50,
     MaxSize = 300,
     DefaultSize = 90,
-    EquipDelay = 0.8
+    EquipDelay = 0.6
 }
 
 local bombJumpEnabled = false
