@@ -527,7 +527,8 @@ local CONFIG = {
     LaunchPower = 58,
     MinSize = 50,
     MaxSize = 300,
-    DefaultSize = 90
+    DefaultSize = 90,
+    EquipDelay = 1.5
 }
 
 local bombJumpEnabled = false
@@ -652,6 +653,7 @@ local function UnequipBomb()
     end)
 end
 
+-- FIX: improved GetAnyBomb with retry (optional, but consistent)
 local function GetAnyBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
@@ -673,11 +675,12 @@ local function GetAnyBomb()
         end
     end
 
-    pcall(function()
-        Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb")
-    end)
-
-    for _ = 1, 5 do
+    -- Attempt to spawn via remote with retries
+    for attempt = 1, 3 do
+        pcall(function()
+            Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb")
+        end)
+        task.wait(0.1)
         for _, bombName in ipairs(BOMB_NAMES) do
             local bomb = character:FindFirstChild(bombName)
             if bomb then return true, bomb end
@@ -690,12 +693,13 @@ local function GetAnyBomb()
                 end
             end
         end
-        task.wait(0.05)
+        task.wait(0.2)
     end
 
     return false, nil
 end
 
+-- FIX: longer equip time and improved bomb retrieval
 local function FastBombJump()
     if not IsPlayerInAir() then return end
     if onCooldown or debounce or justRespawned then return end
@@ -722,7 +726,12 @@ local function FastBombJump()
             end
 
             MakeCharacterJump()
-            UnequipBomb()
+
+            -- Keep bomb equipped for a while before unequipping
+            task.spawn(function()
+                task.wait(CONFIG.EquipDelay)
+                UnequipBomb()
+            end)
 
             task.spawn(function()
                 task.wait(0.1)
@@ -934,6 +943,7 @@ local function UnequipGoldBomb()
     end)
 end
 
+-- FIX: improved GetAnyGoldBomb with retries
 local function GetAnyGoldBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
@@ -951,15 +961,15 @@ local function GetAnyGoldBomb()
         end
     end
 
-    local success = pcall(function()
-        Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb")
-    end)
-
-    if success then
-        for _ = 1, 5 do
+    -- Try to spawn gold bomb with retries
+    for attempt = 1, 3 do
+        local success = pcall(function()
+            Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb")
+        end)
+        if success then
+            task.wait(0.1)
             bomb = character:FindFirstChild(GOLD_BOMB_NAME)
             if bomb then return true, bomb end
-
             if backpack then
                 bomb = backpack:FindFirstChild(GOLD_BOMB_NAME)
                 if bomb then
@@ -968,13 +978,14 @@ local function GetAnyGoldBomb()
                     return true, bomb
                 end
             end
-            task.wait(0.05)
         end
+        task.wait(0.2)
     end
 
     return false, nil
 end
 
+-- FIX: longer equip time for gold bomb
 local function FastGoldBombJump()
     if not IsPlayerInAir() then return end
     if gbjOnCooldown or gbjDebounce or gbjJustRespawned then return end
@@ -1001,7 +1012,12 @@ local function FastGoldBombJump()
             end
 
             GBJMakeCharacterJump()
-            UnequipGoldBomb()
+
+            -- Keep gold bomb equipped for a while before unequipping
+            task.spawn(function()
+                task.wait(CONFIG.EquipDelay)
+                UnequipGoldBomb()
+            end)
 
             task.spawn(function()
                 task.wait(0.1)
