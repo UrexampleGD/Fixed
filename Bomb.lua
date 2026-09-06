@@ -1160,24 +1160,8 @@ local function ApplyScoperFix(enable)
         if not character then return end
         if not character:FindFirstChild("Gun") then return end
 
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then return end
-        local attachment = rootPart:FindFirstChild("GunRaycastAttachment")
-        local originCFrame = attachment and attachment.WorldCFrame or nil
-
-        local WeaponService = require(game:GetService("ReplicatedStorage"):WaitForChild("ClientServices"):WaitForChild("WeaponService"))
-        local targetCFrame = WeaponService:GetTargetPosition(tapPosition.X, tapPosition.Y)
-        if not targetCFrame then
-            local camera = workspace.CurrentCamera
-            local ray = camera:ViewportPointToRay(tapPosition.X, tapPosition.Y, 0)
-            local direction = ray.Direction * 1000
-            local hit = workspace:Raycast(ray.Origin, direction, RaycastParams.new())
-            local targetPos = hit and hit.Position or ray.Origin + direction
-            targetCFrame = CFrame.new(targetPos)
-        end
-
         pcall(function()
-            shootRemote:FireServer(originCFrame, targetCFrame)
+            shootRemote:FireServer()
         end)
     end)
 
