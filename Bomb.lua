@@ -3,6 +3,7 @@
 -- # If this thing has bugs, report it :)
 -- # Have fun using this skidded thing!
 -- # Your Welcome!
+-- # Fucm.
 
 local table_insert = table.insert
 
@@ -96,7 +97,7 @@ local BBSystem = {Buttons = {}, Connections = {}}
 local function bb_safecallback(callback)
     if not callback then return end
     local ok, err = xpcall(callback, function(e) return debug.traceback(e) end)
-    if not ok then end
+    if not ok then warn("[BB ERROR] " .. tostring(err)) end
 end
 
 local function BB_GetStorage()
@@ -310,7 +311,7 @@ local __GOLD_WAIT_COLOR = ColorSequence.new({
 local function bind_safecallback(callback)
     if not callback then return end
     local ok, err = xpcall(callback, function(e) return debug.traceback(e) end)
-    if not ok then end
+    if not ok then warn("[BIND ERROR] " .. tostring(err)) end
 end
 
 local function Bind_GetStorage()
@@ -653,6 +654,7 @@ local function UnequipBomb()
     end)
 end
 
+-- FIX: improved GetAnyBomb with retry (optional, but consistent)
 local function GetAnyBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
@@ -674,6 +676,7 @@ local function GetAnyBomb()
         end
     end
 
+    -- Attempt to spawn via remote with retries
     for attempt = 1, 3 do
         pcall(function()
             Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb")
@@ -697,6 +700,7 @@ local function GetAnyBomb()
     return false, nil
 end
 
+-- FIX: longer equip time and improved bomb retrieval
 local function FastBombJump()
     if not IsPlayerInAir() then return end
     if onCooldown or debounce or justRespawned then return end
@@ -724,6 +728,7 @@ local function FastBombJump()
 
             MakeCharacterJump()
 
+            -- Keep bomb equipped for a while before unequipping
             task.spawn(function()
                 task.wait(CONFIG.EquipDelay)
                 UnequipBomb()
@@ -939,6 +944,7 @@ local function UnequipGoldBomb()
     end)
 end
 
+-- FIX: improved GetAnyGoldBomb with retries
 local function GetAnyGoldBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
@@ -956,6 +962,7 @@ local function GetAnyGoldBomb()
         end
     end
 
+    -- Try to spawn gold bomb with retries
     for attempt = 1, 3 do
         local success = pcall(function()
             Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb")
@@ -1006,6 +1013,7 @@ local function FastGoldBombJump()
 
             GBJMakeCharacterJump()
 
+            -- Keep gold bomb equipped for a while before unequipping
             task.spawn(function()
                 task.wait(CONFIG.EquipDelay)
                 UnequipGoldBomb()
@@ -1130,47 +1138,5 @@ end)
 gbjSection:AddKeybind("Gold Bomb Jump Keybind", "G", FastGoldBombJump)
 
 end
-
-local fixSection = shared.AddSection("GingerScope Fix Mobile")
-fixSection:AddLabel("Scoper Fix – Makes the Gun fire on mobile")
-
-local scoperFixEnabled = false
-local scoperFixMaid = Maid.new()
-RootMaid:GiveTask(scoperFixMaid)
-
-local function ApplyScoperFix(enable)
-    scoperFixMaid:DoCleaning()
-    if not enable then
-        scoperFixEnabled = false
-        return
-    end
-    scoperFixEnabled = true
-
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if not backpack then return end
-    local gun = backpack:FindFirstChild("Gun")
-    if not gun then return end
-
-    local shootRemote = gun:FindFirstChild("Shoot")
-    if not shootRemote then return end
-
-    local connection = Services.UserInputService.TouchTapInWorld:Connect(function(tapPosition, gameProcessed)
-        if gameProcessed then return end
-        local character = LocalPlayer.Character
-        if not character then return end
-        if not character:FindFirstChild("Gun") then return end
-
-        pcall(function()
-            shootRemote:FireServer()
-        end)
-    end)
-
-    scoperFixMaid:GiveTask(connection)
-    shared.Notify("Scoper Fix enabled – Gun will fire on mobile taps.", 3)
-end
-
-fixSection:AddToggle("Enable Scoper Fix", function(bool)
-    ApplyScoperFix(bool)
-end)
 
 end
