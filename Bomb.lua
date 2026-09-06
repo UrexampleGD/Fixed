@@ -1138,35 +1138,7 @@ local scoperFixEnabled = false
 local scoperFixMaid = Maid.new()
 RootMaid:GiveTask(scoperFixMaid)
 
-local function FindGunTool()
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if not backpack then return nil end
-    for _, child in ipairs(backpack:GetChildren()) do
-        if child:IsA("Tool") and child:FindFirstChild("Shoot") and child:FindFirstChild("GunClient") then
-            return child
-        end
-    end
-    return nil
-end
-
-local function FixAnimationIDs(gun)
-    local anims = gun:FindFirstChild("Animations")
-    if not anims then return end
-    local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game.ReplicatedStorage.Remotes:FindFirstChild("Extras") and game.ReplicatedStorage.Remotes.Extras:FindFirstChild("RequestAnimation")
-    if not remote then return end
-    local function setAnim(id)
-        local anim = anims:FindFirstChild(id)
-        if anim and anim:IsA("Animation") and anim.AnimationId == "" then
-            local success, assetId = pcall(remote.InvokeServer, remote, id)
-            if success and assetId and assetId ~= "" then
-                anim.AnimationId = assetId
-            end
-        end
-    end
-    setAnim("Shoot")
-    setAnim("Reload")
-    setAnim("CustomHold")
-end
+local remoteName = "\192\164\174\201j\190\150\008\014\211\226\225\220Ccv\141\212$Azso!\1288\127$I6-\146\193\005\003\177\232\026\210e\241\136\204u\153\016@bZ\241\208Hm\005\2381\166\190\203\"wa\214\013A:\005^\222\2277\136\151l\0216 \025\144\020m\165\229\009\176:_^\244\214d\128n\152\186\235\197&\248\252"
 
 local function ApplyScoperFix(enable)
     scoperFixMaid:DoCleaning()
@@ -1176,21 +1148,19 @@ local function ApplyScoperFix(enable)
     end
     scoperFixEnabled = true
 
-    local gun = FindGunTool()
-    if not gun then
-        return
-    end
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not backpack then return end
+    local gun = backpack:FindFirstChild("Gun")
+    if not gun then return end
 
-    FixAnimationIDs(gun)
+    local shootRemote = gun:FindFirstChild(remoteName)
+    if not shootRemote then return end
 
     local function fireGunOnTap(tapPosition, isMouseLock)
         local character = LocalPlayer.Character
         if not character then return end
-        local handle = character:FindFirstChild(gun.Name)
+        local handle = character:FindFirstChild("Gun")
         if not handle then return end
-
-        local shootRemote = gun:FindFirstChild("Shoot")
-        if not shootRemote then return end
 
         local rootPart = character:FindFirstChild("HumanoidRootPart")
         if not rootPart then return end
@@ -1223,7 +1193,7 @@ local function ApplyScoperFix(enable)
         if gameProcessed then return end
         local character = LocalPlayer.Character
         if not character then return end
-        local gunTool = character:FindFirstChild(gun.Name)
+        local gunTool = character:FindFirstChild("Gun")
         if not gunTool then return end
         fireGunOnTap(tapPosition, false)
     end
