@@ -1154,11 +1154,11 @@ local function ApplyScoperFix(enable)
     local shootRemote = gun:FindFirstChild("Shoot")
     if not shootRemote then return end
 
-    local function fireGunOnTap(tapPosition, isMouseLock)
+    local connection = Services.UserInputService.TouchTapInWorld:Connect(function(tapPosition, gameProcessed)
+        if gameProcessed then return end
         local character = LocalPlayer.Character
         if not character then return end
-        local handle = character:FindFirstChild("Gun")
-        if not handle then return end
+        if not character:FindFirstChild("Gun") then return end
 
         local rootPart = character:FindFirstChild("HumanoidRootPart")
         if not rootPart then return end
@@ -1166,13 +1166,7 @@ local function ApplyScoperFix(enable)
         local originCFrame = attachment and attachment.WorldCFrame or nil
 
         local WeaponService = require(game:GetService("ReplicatedStorage"):WaitForChild("ClientServices"):WaitForChild("WeaponService"))
-        local targetCFrame
-        if isMouseLock then
-            targetCFrame = WeaponService:GetMouseTargetCFrame()
-        else
-            targetCFrame = WeaponService:GetTargetPosition(tapPosition.X, tapPosition.Y)
-        end
-
+        local targetCFrame = WeaponService:GetTargetPosition(tapPosition.X, tapPosition.Y)
         if not targetCFrame then
             local camera = workspace.CurrentCamera
             local ray = camera:ViewportPointToRay(tapPosition.X, tapPosition.Y, 0)
@@ -1185,20 +1179,9 @@ local function ApplyScoperFix(enable)
         pcall(function()
             shootRemote:FireServer(originCFrame, targetCFrame)
         end)
-    end
+    end)
 
-    local function onTouchTap(tapPosition, gameProcessed)
-        if gameProcessed then return end
-        local character = LocalPlayer.Character
-        if not character then return end
-        local gunTool = character:FindFirstChild("Gun")
-        if not gunTool then return end
-        fireGunOnTap(tapPosition, false)
-    end
-
-    local connection = Services.UserInputService.TouchTapInWorld:Connect(onTouchTap)
     scoperFixMaid:GiveTask(connection)
-
     shared.Notify("Scoper Fix enabled – Gun will fire on mobile taps.", 3)
 end
 
