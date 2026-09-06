@@ -1138,8 +1138,6 @@ local scoperFixEnabled = false
 local scoperFixMaid = Maid.new()
 RootMaid:GiveTask(scoperFixMaid)
 
-local remoteName = "\192\164\174\201j\190\150\008\014\211\226\225\220Ccv\141\212$Azso!\1288\127$I6-\146\193\005\003\177\232\026\210e\241\136\204u\153\016@bZ\241\208Hm\005\2381\166\190\203\"wa\214\013A:\005^\222\2277\136\151l\0216 \025\144\020m\165\229\009\176:_^\244\214d\128n\152\186\235\197&\248\252"
-
 local function ApplyScoperFix(enable)
     scoperFixMaid:DoCleaning()
     if not enable then
@@ -1153,7 +1151,7 @@ local function ApplyScoperFix(enable)
     local gun = backpack:FindFirstChild("Gun")
     if not gun then return end
 
-    local shootRemote = gun:FindFirstChild(remoteName)
+    local shootRemote = gun:FindFirstChild("Shoot")
     if not shootRemote then return end
 
     local function fireGunOnTap(tapPosition, isMouseLock)
