@@ -14,57 +14,39 @@ function Maid.new()
 end
 
 function Maid:GiveTask(task)
-    if self._destroyed then
-        self:_cleanupTask(task)
-        return
-    end
+    if self._destroyed then self:_cleanupTask(task) return end
     table_insert(self._tasks, task)
     return task
 end
 
 function Maid:GiveTasks(...)
-    for _, task in ipairs({...}) do
-        self:GiveTask(task)
-    end
+    for _, task in ipairs({...}) do self:GiveTask(task) end
 end
 
 function Maid:_cleanupTask(task)
     local taskType = typeof(task)
-    if taskType == "RBXScriptConnection" then
-        task:Disconnect()
-    elseif taskType == "Instance" then
-        task:Destroy()
-    elseif taskType == "function" then
-        task()
-    elseif taskType == "table" and type(task.Destroy) == "function" then
-        task:Destroy()
-    end
+    if taskType == "RBXScriptConnection" then task:Disconnect()
+    elseif taskType == "Instance" then task:Destroy()
+    elseif taskType == "function" then task()
+    elseif taskType == "table" and type(task.Destroy) == "function" then task:Destroy() end
 end
 
 function Maid:DoCleaning()
     if self._destroyed then return end
     self._destroyed = true
-    for _, task in ipairs(self._tasks) do
-        self:_cleanupTask(task)
-    end
+    for _, task in ipairs(self._tasks) do self:_cleanupTask(task) end
     self._tasks = {}
 end
 
-function Maid:Destroy() 
-    self:DoCleaning() 
-end
+function Maid:Destroy() self:DoCleaning() end
 
 local RootMaid = Maid.new()
-
-local odh = odh_shared_plugins
 
 local Services = {
     Players = game:GetService("Players"),
     ReplicatedStorage = game:GetService("ReplicatedStorage"),
     RunService = game:GetService("RunService"),
     UserInputService = game:GetService("UserInputService"),
-    StarterGui = game:GetService("StarterGui"),
-    CoreGui = game:GetService("CoreGui"),
     Workspace = game:GetService("Workspace"),
     TweenService = game:GetService("TweenService"),
     SoundService = game:GetService("SoundService"),
@@ -79,18 +61,10 @@ local __UD2 = UDim2.new
 local __UD = UDim.new
 local __V2 = Vector2.new
 
-local function getfserv(s)
-    local ok, svc = pcall(function() return game:GetService(s) end)
-    if ok and svc then return svc end
-    ok, svc = pcall(function() return game:FindService(s) end)
-    if ok and svc then return svc end
-    return game[s]
-end
-
-local __RS   = getfserv("RunService")
-local __UIS  = getfserv("UserInputService")
-local __PLRS = getfserv("Players")
-local __TS   = getfserv("TweenService")
+local __RS = Services.RunService
+local __UIS = Services.UserInputService
+local __PLRS = Services.Players
+local __TS = Services.TweenService
 
 local saveButtonPositions = false
 local POSITION_FILE = "bombjump_ui_positions.json"
@@ -108,40 +82,27 @@ local function SavePosition(id, pos)
     if not saveButtonPositions then return end
     local positions = LoadPositions()
     positions[id] = {XScale = pos.X.Scale, XOffset = pos.X.Offset, YScale = pos.Y.Scale, YOffset = pos.Y.Offset}
-    pcall(function()
-        writefile(POSITION_FILE, Services.HttpService:JSONEncode(positions))
-    end)
+    pcall(function() writefile(POSITION_FILE, Services.HttpService:JSONEncode(positions)) end)
 end
 
 local function ApplySavedPosition(gui, id)
     if not saveButtonPositions then return end
-    local positions = LoadPositions()
-    local p = positions[id]
-    if p then
-        gui.Position = __UD2(p.XScale or 0, p.XOffset or 0, p.YScale or 0, p.YOffset or 0)
-    end
+    local p = LoadPositions()[id]
+    if p then gui.Position = __UD2(p.XScale or 0, p.XOffset or 0, p.YScale or 0, p.YOffset or 0) end
 end
 
 local BBSystem = {Buttons = {}, Connections = {}}
 
 local function bb_safecallback(callback)
     if not callback then return end
-    local ok, err = xpcall(callback, function(e) return debug.traceback(e) end)
-    if not ok then end
+    xpcall(callback, function(e) return debug.traceback(e) end)
 end
 
 local function BB_GetStorage()
     local parent = gethui and gethui()
-    if not parent or typeof(parent) ~= "Instance" then
-        parent = getfserv("CoreGui")
-    end
-    if not parent or typeof(parent) ~= "Instance" then
-        parent = __PLRS.LocalPlayer:WaitForChild("PlayerGui", 5)
-    end
-    if typeof(parent) ~= "Instance" then
-        parent = __PLRS.LocalPlayer:WaitForChild("PlayerGui")
-    end
-
+    if not parent or typeof(parent) ~= "Instance" then parent = Services.CoreGui end
+    if not parent or typeof(parent) ~= "Instance" then parent = __PLRS.LocalPlayer:WaitForChild("PlayerGui", 5) end
+    if typeof(parent) ~= "Instance" then parent = __PLRS.LocalPlayer:WaitForChild("PlayerGui") end
     local sg = parent:FindFirstChild("@BBStorage")
     if not sg then
         sg = Instance.new("ScreenGui")
@@ -155,27 +116,21 @@ local function BB_GetStorage()
 end
 
 local __BB_GRAD_SEQ = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,    __PCLR(0.0784314, 0.0784314, 0.0784314)),
+    ColorSequenceKeypoint.new(0, __PCLR(0.0784314, 0.0784314, 0.0784314)),
     ColorSequenceKeypoint.new(0.75, __PCLR(0.0784314, 0.0784314, 0.54902)),
-    ColorSequenceKeypoint.new(1,    __PCLR(0.470588,  0.156863,  0.470588))
+    ColorSequenceKeypoint.new(1, __PCLR(0.470588, 0.156863, 0.470588))
 })
 
 local function BB_MakeDraggable(gui, func, ripple, sound)
     local dragging, dragInput, dragStart, startPos
     local hasMoved = false
     local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local normalSize    = __UD2(0, 200, 0, 75)
-    local normalTxtSize = 24
-    local bigSize       = __UD2(0, 220, 0, 82.5)
-    local bigTxtSize    = 26.4
 
     gui.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging  = true
-            hasMoved  = false
-            dragStart = input.Position
-            startPos  = gui.Position
-            __TS:Create(gui, tInfo, {Size = bigSize, TextSize = bigTxtSize}):Play()
+            dragging, hasMoved = true, false
+            dragStart, startPos = input.Position, gui.Position
+            __TS:Create(gui, tInfo, {Size = __UD2(0, 220, 0, 82.5), TextSize = 26.4}):Play()
             local absPos = gui.AbsolutePosition
             ripple.Position = __UD2(0, input.Position.X - absPos.X, 0, input.Position.Y - absPos.Y)
             ripple.Size = __UD2(0, 0, 0, 0)
@@ -183,14 +138,13 @@ local function BB_MakeDraggable(gui, func, ripple, sound)
             ripple.Visible = true
             sound:Play()
             __TS:Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                Size = __UD2(0, 300, 0, 300),
-                BackgroundTransparency = 1
+                Size = __UD2(0, 300, 0, 300), BackgroundTransparency = 1
             }):Play()
             local rel
             rel = __UIS.InputEnded:Connect(function(endInput)
                 if endInput.UserInputType == input.UserInputType then
                     dragging = false
-                    __TS:Create(gui, tInfo, {Size = normalSize, TextSize = normalTxtSize}):Play()
+                    __TS:Create(gui, tInfo, {Size = __UD2(0, 200, 0, 75), TextSize = 24}):Play()
                     if not hasMoved then bb_safecallback(func) end
                     SavePosition(gui.Name, gui.Position)
                     rel:Disconnect()
@@ -216,17 +170,13 @@ local muteButtonSounds = false
 
 local function UpdateAllButtonSounds()
     local volume = muteButtonSounds and 0 or 0.5
-    for id, btn in pairs(BBSystem.Buttons) do
+    for _, btn in pairs(BBSystem.Buttons) do
         local sound = btn:FindFirstChild("Sound")
-        if sound then
-            sound.Volume = volume
-        end
+        if sound then sound.Volume = volume end
     end
-    for id, btn in pairs(BindableButtons.Buttons) do
+    for _, btn in pairs(BindableButtons.Buttons) do
         local sound = btn:FindFirstChild("Sound")
-        if sound then
-            sound.Volume = volume
-        end
+        if sound then sound.Volume = volume end
     end
 end
 
@@ -258,16 +208,11 @@ local function AddBigButton(id, text, func, isGold)
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     stroke.Parent = bb
     local gradient = Instance.new("UIGradient")
-
-    if isGold then
-        gradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0,    __RGB(255, 215, 0)),
-            ColorSequenceKeypoint.new(0.5,  __RGB(255, 140, 0)),
-            ColorSequenceKeypoint.new(1,    __RGB(184, 134, 11))
-        })
-    else
-        gradient.Color = __BB_GRAD_SEQ
-    end
+    gradient.Color = isGold and ColorSequence.new({
+        ColorSequenceKeypoint.new(0, __RGB(255, 215, 0)),
+        ColorSequenceKeypoint.new(0.5, __RGB(255, 140, 0)),
+        ColorSequenceKeypoint.new(1, __RGB(184, 134, 11))
+    }) or __BB_GRAD_SEQ
     gradient.Parent = stroke
 
     local ripple = Instance.new("Frame")
@@ -308,56 +253,42 @@ end
 
 local BindableButtons = {Buttons = {}, Maids = {}, Count = 0}
 
-local __SHAPES = {
-    [0] = "rbxassetid://86221076925479",
-    [1] = "rbxassetid://96242665417546",
-    [2] = "rbxassetid://97129189935336",
-    [3] = "rbxassetid://76165862027868",
-    [4] = "rbxassetid://125868092127496"
-}
+local __SHAPES = {[0] = "rbxassetid://86221076925479"}
 
 local __NORMAL_COLOR = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,   __PCLR(0.133333, 0.827451, 0.494118)),
+    ColorSequenceKeypoint.new(0, __PCLR(0.133333, 0.827451, 0.494118)),
     ColorSequenceKeypoint.new(0.6, __PCLR(0.231373, 0.509804, 0.498039)),
-    ColorSequenceKeypoint.new(1,   __PCLR(0.501961, 0.501961, 0.501961))
+    ColorSequenceKeypoint.new(1, __PCLR(0.501961, 0.501961, 0.501961))
 })
 
 local __WAIT_COLOR = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,   __PCLR(0.827451, 0.133333, 0.133333)),
+    ColorSequenceKeypoint.new(0, __PCLR(0.827451, 0.133333, 0.133333)),
     ColorSequenceKeypoint.new(0.6, __PCLR(0.509804, 0.231373, 0.231373)),
-    ColorSequenceKeypoint.new(1,   __PCLR(0.501961, 0.501961, 0.501961))
+    ColorSequenceKeypoint.new(1, __PCLR(0.501961, 0.501961, 0.501961))
 })
 
 local __GOLD_NORMAL_COLOR = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,   __RGB(255, 215, 0)),
+    ColorSequenceKeypoint.new(0, __RGB(255, 215, 0)),
     ColorSequenceKeypoint.new(0.6, __RGB(255, 140, 0)),
-    ColorSequenceKeypoint.new(1,   __RGB(184, 134, 11))
+    ColorSequenceKeypoint.new(1, __RGB(184, 134, 11))
 })
 
 local __GOLD_WAIT_COLOR = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,   __RGB(255, 69, 0)),
+    ColorSequenceKeypoint.new(0, __RGB(255, 69, 0)),
     ColorSequenceKeypoint.new(0.6, __RGB(139, 69, 19)),
-    ColorSequenceKeypoint.new(1,   __RGB(160, 82, 45))
+    ColorSequenceKeypoint.new(1, __RGB(160, 82, 45))
 })
 
 local function bind_safecallback(callback)
     if not callback then return end
-    local ok, err = xpcall(callback, function(e) return debug.traceback(e) end)
-    if not ok then end
+    xpcall(callback, function(e) return debug.traceback(e) end)
 end
 
 local function Bind_GetStorage()
     local parent = gethui and gethui()
-    if not parent or typeof(parent) ~= "Instance" then
-        parent = getfserv("CoreGui")
-    end
-    if not parent or typeof(parent) ~= "Instance" then
-        parent = __PLRS.LocalPlayer:WaitForChild("PlayerGui", 5)
-    end
-    if typeof(parent) ~= "Instance" then
-        parent = __PLRS.LocalPlayer:WaitForChild("PlayerGui")
-    end
-
+    if not parent or typeof(parent) ~= "Instance" then parent = Services.CoreGui end
+    if not parent or typeof(parent) ~= "Instance" then parent = __PLRS.LocalPlayer:WaitForChild("PlayerGui", 5) end
+    if typeof(parent) ~= "Instance" then parent = __PLRS.LocalPlayer:WaitForChild("PlayerGui") end
     local sg = parent:FindFirstChild("@bindstorage")
     if not sg then
         sg = Instance.new("ScreenGui")
@@ -385,17 +316,13 @@ local function Bind_MakeDraggable(gui, maid, ripple, sound, clickFunc)
             ripple.BackgroundTransparency = 0.5
             ripple.Visible = true
             __TS:Create(ripple, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                Size = __UD2(0, 45, 0, 45),
-                BackgroundTransparency = 1
+                Size = __UD2(0, 45, 0, 45), BackgroundTransparency = 1
             }):Play()
-
             local rel
             rel = __UIS.InputEnded:Connect(function(endInput)
                 if endInput.UserInputType == input.UserInputType then
                     dragging = false
-                    if not hasMoved then
-                        bind_safecallback(clickFunc)
-                    end
+                    if not hasMoved then bind_safecallback(clickFunc) end
                     SavePosition(gui.Name, gui.Position)
                     rel:Disconnect()
                 end
@@ -462,11 +389,7 @@ function BindableButtons.AddBButton(id, text, clickFunc, isGold)
 
     local Stroke = Instance.new("UIGradient", ImageButton)
     Stroke.Name = "@Stroke"
-    if isGold then
-        Stroke.Color = __GOLD_NORMAL_COLOR
-    else
-        Stroke.Color = __NORMAL_COLOR
-    end
+    Stroke.Color = isGold and __GOLD_NORMAL_COLOR or __NORMAL_COLOR
 
     local ripple = Instance.new("Frame")
     ripple.Name = "@ripple"
@@ -507,29 +430,18 @@ end
 function BindableButtons.UpdateBButtonText(id, text, isWaiting, isGold)
     local btn = BindableButtons.Buttons[id]
     if not btn then return end
-
     local textLabel = btn:FindFirstChild("@Text")
-    if textLabel then
-        textLabel.Text = text
-    end
-
+    if textLabel then textLabel.Text = text end
     local stroke = btn:FindFirstChild("@Stroke")
     if stroke then
-        if isGold then
-            stroke.Color = isWaiting and __GOLD_WAIT_COLOR or __GOLD_NORMAL_COLOR
-        else
-            stroke.Color = isWaiting and __WAIT_COLOR or __NORMAL_COLOR
-        end
+        if isGold then stroke.Color = isWaiting and __GOLD_WAIT_COLOR or __GOLD_NORMAL_COLOR
+        else stroke.Color = isWaiting and __WAIT_COLOR or __NORMAL_COLOR end
     end
 end
 
 local function GetSafeGuiRoot()
-    local success, result = pcall(function() 
-        return gethui() 
-    end)
-    if success and result and typeof(result) == "Instance" then
-        return result
-    end
+    local success, result = pcall(function() return gethui() end)
+    if success and result and typeof(result) == "Instance" then return result end
     return Services.CoreGui
 end
 
@@ -540,14 +452,14 @@ hiddenGui.IgnoreGuiInset = true
 hiddenGui.Parent = GetSafeGuiRoot()
 RootMaid:GiveTask(hiddenGui)
 
-local _game = odh and odh.game_name or ""
+local _game = odh_shared_plugins and odh_shared_plugins.game_name or ""
 local isMM2 = (_game == "Murder Mystery 2") or (game.PlaceId == 142823291)
 local isMMM = (_game == "Murder Mystery Modded")
 local isMMV = (_game == "MMV") or (game.PlaceId == 116924926476457)
 
 if isMM2 or isMMM or isMMV then
 
-local mainTab = odh.CreateTab("Bomb Jump+")
+local mainTab = odh_shared_plugins.CreateTab("Bomb Jump+")
 
 local aboutSection = mainTab:AddSection("About", "Information")
 
@@ -561,24 +473,18 @@ end)
 aboutSection:AddToggle("Save Button Position", function(bool)
     saveButtonPositions = bool
     if bool then
-        for id, btn in pairs(BBSystem.Buttons) do
-            ApplySavedPosition(btn, id)
-        end
-        for id, btn in pairs(BindableButtons.Buttons) do
-            ApplySavedPosition(btn, id)
-        end
+        for id, btn in pairs(BBSystem.Buttons) do ApplySavedPosition(btn, id) end
+        for id, btn in pairs(BindableButtons.Buttons) do ApplySavedPosition(btn, id) end
     end
 end)
 
-pcall(function() odh.Notify("Bomb Jump+ Successfully Loaded", 2) end)
+pcall(function() odh_shared_plugins.Notify("Bomb Jump+ Loaded", 2) end)
 
 local section = mainTab:AddSection("Bomb Jump+", "Main")
 
 local CONFIG = {
     CooldownTime = 22.0,
     LaunchPower = 58,
-    MinSize = 50,
-    MaxSize = 300,
     DefaultSize = 90,
     EquipDelay = 0.6
 }
@@ -591,60 +497,41 @@ local justRespawned = false
 local bigButtonSize = CONFIG.DefaultSize
 local bindButtonSize = 0.11
 local bjBindButton = nil
-local bigBtnExists = false
-local bindBtnExists = false
 
 local BOMB_NAMES = {"FakeBomb"}
 
 local BombJumpMaid = Maid.new()
 RootMaid:GiveTask(BombJumpMaid)
 
-local Sounds = {
-    Click = Instance.new("Sound"),
-    Cooldown = Instance.new("Sound")
-}
+local Sounds = {Click = Instance.new("Sound"), Cooldown = Instance.new("Sound")}
 Sounds.Click.SoundId = "rbxassetid://6895079853"
 Sounds.Click.Volume = 1.0
-
 Sounds.Cooldown.SoundId = "rbxassetid://138090596"
 Sounds.Cooldown.Volume = 1.0
 
 local function PlaySound(snd)
-    pcall(function()
-        if snd then
-            Services.SoundService:PlayLocalSound(snd)
-        end
-    end)
+    pcall(function() if snd then Services.SoundService:PlayLocalSound(snd) end end)
 end
 
 local function IsPlayerInAir()
     local character = LocalPlayer.Character
     if not character then return false end
-
     local humanoid = character:FindFirstChild("Humanoid")
     if not humanoid then return false end
-
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return false end
-
     local state = humanoid:GetState()
-    if state == Enum.HumanoidStateType.Jumping or 
-       state == Enum.HumanoidStateType.FallingDown or
-       state == Enum.HumanoidStateType.Freefall then
+    if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.FallingDown or state == Enum.HumanoidStateType.Freefall then
         return true
     end
-
-    local velocityY = rootPart.Velocity.Y
-    return math.abs(velocityY) > 0.5
+    return math.abs(rootPart.Velocity.Y) > 0.5
 end
 
 local function ResetCooldown()
     onCooldown = false
     local bigBtn = BBSystem.Buttons["bombjump_big"]
     if bigBtn then bigBtn.Text = "Bomb Jump" end
-    if bjBindButton then
-        BindableButtons.UpdateBButtonText("bombjump_bind", "BJ", false, false)
-    end
+    if bjBindButton then BindableButtons.UpdateBButtonText("bombjump_bind", "BJ", false, false) end
 end
 
 local function StartCooldown()
@@ -652,18 +539,13 @@ local function StartCooldown()
     debounce = false
     local bigBtn = BBSystem.Buttons["bombjump_big"]
     if bigBtn then bigBtn.Text = "Wait" end
-    if bjBindButton then
-        BindableButtons.UpdateBButtonText("bombjump_bind", "Wait", true, false)
-    end
-
+    if bjBindButton then BindableButtons.UpdateBButtonText("bombjump_bind", "Wait", true, false) end
     task.spawn(function()
         for i = CONFIG.CooldownTime, 1, -1 do
             if not onCooldown then break end
             local bigBtn = BBSystem.Buttons["bombjump_big"]
             if bigBtn then bigBtn.Text = tostring(i) end
-            if bjBindButton then
-                BindableButtons.UpdateBButtonText("bombjump_bind", tostring(i), true, false)
-            end
+            if bjBindButton then BindableButtons.UpdateBButtonText("bombjump_bind", tostring(i), true, false) end
             task.wait(1)
         end
         if onCooldown then ResetCooldown() end
@@ -674,8 +556,7 @@ local function GetCenterPosition()
     local character = LocalPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
         local camera = Services.Workspace.CurrentCamera
-        local lookDir = camera.CFrame.LookVector
-        return character.HumanoidRootPart.Position + (lookDir * 5)
+        return character.HumanoidRootPart.Position + (camera.CFrame.LookVector * 5)
     end
     return nil
 end
@@ -684,9 +565,7 @@ local function MakeCharacterJump()
     local character = LocalPlayer.Character
     if character then
         local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
+        if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
 end
 
@@ -696,10 +575,7 @@ local function UnequipBomb()
         if character then
             for _, bombName in ipairs(BOMB_NAMES) do
                 local bomb = character:FindFirstChild(bombName)
-                if bomb then
-                    bomb.Parent = LocalPlayer.Backpack or character
-                    break
-                end
+                if bomb then bomb.Parent = LocalPlayer.Backpack or character break end
             end
         end
     end)
@@ -708,44 +584,30 @@ end
 local function GetAnyBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
-
     for _, bombName in ipairs(BOMB_NAMES) do
         local bomb = character:FindFirstChild(bombName)
         if bomb then return true, bomb end
     end
-
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, bombName in ipairs(BOMB_NAMES) do
             local bomb = backpack:FindFirstChild(bombName)
-            if bomb then
-                bomb.Parent = character
-                task.wait(0.05)
-                return true, bomb
-            end
+            if bomb then bomb.Parent = character task.wait(0.05) return true, bomb end
         end
     end
-
     for attempt = 1, 3 do
-        pcall(function()
-            Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb")
-        end)
+        pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb") end)
         task.wait(0.1)
         for _, bombName in ipairs(BOMB_NAMES) do
             local bomb = character:FindFirstChild(bombName)
             if bomb then return true, bomb end
             if backpack then
                 bomb = backpack:FindFirstChild(bombName)
-                if bomb then
-                    bomb.Parent = character
-                    task.wait(0.05)
-                    return true, bomb
-                end
+                if bomb then bomb.Parent = character task.wait(0.05) return true, bomb end
             end
         end
         task.wait(0.2)
     end
-
     return false, nil
 end
 
@@ -753,55 +615,34 @@ local function FastBombJump()
     if not IsPlayerInAir() then return end
     if onCooldown or debounce or justRespawned then return end
     debounce = true
-
     local success, bomb = GetAnyBomb()
-
     if success and bomb then
         local position = GetCenterPosition()
         if position then
             local remote = bomb:FindFirstChild("Remote")
             if remote then
                 PlaySound(Sounds.Click)
-                pcall(function()
-                    remote:FireServer(CFrame.new(position), 50)
-                end)
+                pcall(function() remote:FireServer(CFrame.new(position), 50) end)
             end
-
             local char = LocalPlayer.Character
             local root = char and char:FindFirstChild("HumanoidRootPart")
             if root then
                 local currentVelocity = root.AssemblyLinearVelocity
                 root.AssemblyLinearVelocity = Vector3.new(currentVelocity.X, CONFIG.LaunchPower, currentVelocity.Z)
             end
-
             MakeCharacterJump()
-
-            task.spawn(function()
-                task.wait(CONFIG.EquipDelay)
-                UnequipBomb()
-            end)
-
-            task.spawn(function()
-                task.wait(0.1)
-                StartCooldown()
-            end)
+            task.spawn(function() task.wait(CONFIG.EquipDelay) UnequipBomb() end)
+            task.spawn(function() task.wait(0.1) StartCooldown() end)
         end
     end
-
-    task.spawn(function()
-        task.wait(0.5)
-        debounce = false
-    end)
+    task.spawn(function() task.wait(0.5) debounce = false end)
 end
 
 local function IsHoldingBomb()
     local character = LocalPlayer.Character
     if not character then return false end
-
     for _, bombName in ipairs(BOMB_NAMES) do
-        if character:FindFirstChild(bombName) then
-            return true
-        end
+        if character:FindFirstChild(bombName) then return true end
     end
     return false
 end
@@ -819,18 +660,14 @@ BombJumpMaid:GiveTasks(
     end),
     Services.UserInputService.InputChanged:Connect(function(input)
         local data = activeTouches[input]
-        if data and (input.Position - data.startPosition).Magnitude > TAP_MOVEMENT_THRESHOLD then
-            data.moved = true
-        end
+        if data and (input.Position - data.startPosition).Magnitude > TAP_MOVEMENT_THRESHOLD then data.moved = true end
     end),
     Services.UserInputService.InputEnded:Connect(function(input, gp)
         if gp then activeTouches[input] = nil return end
         local data = activeTouches[input]
         if data and not data.moved and tick() - data.startTime <= TAP_TIME_THRESHOLD then
             if bombJumpEnabled and not onCooldown and not debounce then
-                if IsHoldingBomb() and IsPlayerInAir() then
-                    FastBombJump()
-                end
+                if IsHoldingBomb() and IsPlayerInAir() then FastBombJump() end
             end
         end
         activeTouches[input] = nil
@@ -863,13 +700,10 @@ section:AddToggle("Auto-Get Fake Bomb", function(bool)
 end)
 
 section:AddToggle("Enable BJ Big Button", function(e)
-    bigBtnExists = e
     if e then
         AddBigButton("bombjump_big", "Bomb Jump", FastBombJump, false)
         local btn = BBSystem.Buttons["bombjump_big"]
-        if btn then
-            btn.Size = __UD2(0, bigButtonSize, 0, bigButtonSize * 0.375)
-        end
+        if btn then btn.Size = __UD2(0, bigButtonSize, 0, bigButtonSize * 0.375) end
     else
         DeleteBigButton("bombjump_big")
     end
@@ -878,13 +712,10 @@ end)
 section:AddSlider("BJ Big Button Size", 50, 300, CONFIG.DefaultSize, function(value)
     bigButtonSize = value
     local btn = BBSystem.Buttons["bombjump_big"]
-    if btn then
-        btn.Size = __UD2(0, bigButtonSize, 0, bigButtonSize * 0.375)
-    end
+    if btn then btn.Size = __UD2(0, bigButtonSize, 0, bigButtonSize * 0.375) end
 end)
 
 section:AddToggle("Enable BJ Bind Button", function(e)
-    bindBtnExists = e
     if e then
         BindableButtons.AddBButton("bombjump_bind", "BJ", FastBombJump, false)
         bjBindButton = BindableButtons.Buttons["bombjump_bind"]
@@ -931,9 +762,7 @@ local function GBJResetCooldown()
     gbjOnCooldown = false
     local bigBtn = BBSystem.Buttons["goldbombjump_big"]
     if bigBtn then bigBtn.Text = "Gold Bomb Jump" end
-    if gbjBindButton then
-        BindableButtons.UpdateBButtonText("goldbombjump_bind", "GBJ", false, true)
-    end
+    if gbjBindButton then BindableButtons.UpdateBButtonText("goldbombjump_bind", "GBJ", false, true) end
 end
 
 local function GBJStartCooldown()
@@ -941,18 +770,13 @@ local function GBJStartCooldown()
     gbjDebounce = false
     local bigBtn = BBSystem.Buttons["goldbombjump_big"]
     if bigBtn then bigBtn.Text = "Wait" end
-    if gbjBindButton then
-        BindableButtons.UpdateBButtonText("goldbombjump_bind", "Wait", true, true)
-    end
-
+    if gbjBindButton then BindableButtons.UpdateBButtonText("goldbombjump_bind", "Wait", true, true) end
     task.spawn(function()
         for i = 9, 1, -1 do
             if not gbjOnCooldown then break end
             local bigBtn = BBSystem.Buttons["goldbombjump_big"]
             if bigBtn then bigBtn.Text = tostring(i) end
-            if gbjBindButton then
-                BindableButtons.UpdateBButtonText("goldbombjump_bind", tostring(i), true, true)
-            end
+            if gbjBindButton then BindableButtons.UpdateBButtonText("goldbombjump_bind", tostring(i), true, true) end
             task.wait(1)
         end
         if gbjOnCooldown then GBJResetCooldown() end
@@ -963,8 +787,7 @@ local function GBJGetCenterPosition()
     local character = LocalPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
         local camera = Services.Workspace.CurrentCamera
-        local lookDir = camera.CFrame.LookVector
-        return character.HumanoidRootPart.Position + (lookDir * 5)
+        return character.HumanoidRootPart.Position + (camera.CFrame.LookVector * 5)
     end
     return nil
 end
@@ -973,9 +796,7 @@ local function GBJMakeCharacterJump()
     local character = LocalPlayer.Character
     if character then
         local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
+        if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
     end
 end
 
@@ -985,10 +806,7 @@ local function UnequipGoldBomb()
         if character then
             for _, goldName in ipairs(GOLD_BOMB_NAMES) do
                 local bomb = character:FindFirstChild(goldName)
-                if bomb then
-                    bomb.Parent = LocalPlayer.Backpack or character
-                    break
-                end
+                if bomb then bomb.Parent = LocalPlayer.Backpack or character break end
             end
         end
     end)
@@ -997,29 +815,20 @@ end
 local function GetAnyGoldBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
-
     for _, goldName in ipairs(GOLD_BOMB_NAMES) do
         local bomb = character:FindFirstChild(goldName)
         if bomb then return true, bomb end
     end
-
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, goldName in ipairs(GOLD_BOMB_NAMES) do
             local bomb = backpack:FindFirstChild(goldName)
-            if bomb then
-                bomb.Parent = character
-                task.wait(0.05)
-                return true, bomb
-            end
+            if bomb then bomb.Parent = character task.wait(0.05) return true, bomb end
         end
     end
-
     for attempt = 1, 3 do
         for _, goldName in ipairs(GOLD_BOMB_NAMES) do
-            pcall(function()
-                Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer(goldName)
-            end)
+            pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer(goldName) end)
         end
         task.wait(0.1)
         for _, goldName in ipairs(GOLD_BOMB_NAMES) do
@@ -1027,16 +836,11 @@ local function GetAnyGoldBomb()
             if bomb then return true, bomb end
             if backpack then
                 bomb = backpack:FindFirstChild(goldName)
-                if bomb then
-                    bomb.Parent = character
-                    task.wait(0.05)
-                    return true, bomb
-                end
+                if bomb then bomb.Parent = character task.wait(0.05) return true, bomb end
             end
         end
         task.wait(0.2)
     end
-
     return false, nil
 end
 
@@ -1044,54 +848,34 @@ local function FastGoldBombJump()
     if not IsPlayerInAir() then return end
     if gbjOnCooldown or gbjDebounce or gbjJustRespawned then return end
     gbjDebounce = true
-
     local success, bomb = GetAnyGoldBomb()
-
     if success and bomb then
         local position = GBJGetCenterPosition()
         if position then
             local remote = bomb:FindFirstChild("Remote")
             if remote then
                 PlaySound(Sounds.Click)
-                pcall(function()
-                    remote:FireServer(CFrame.new(position), 50)
-                end)
+                pcall(function() remote:FireServer(CFrame.new(position), 50) end)
             end
-
             local char = LocalPlayer.Character
             local root = char and char:FindFirstChild("HumanoidRootPart")
             if root then
                 local currentVelocity = root.AssemblyLinearVelocity
                 root.AssemblyLinearVelocity = Vector3.new(currentVelocity.X, CONFIG.LaunchPower, currentVelocity.Z)
             end
-
             GBJMakeCharacterJump()
-
-            task.spawn(function()
-                task.wait(CONFIG.EquipDelay)
-                UnequipGoldBomb()
-            end)
-
-            task.spawn(function()
-                task.wait(0.1)
-                GBJStartCooldown()
-            end)
+            task.spawn(function() task.wait(CONFIG.EquipDelay) UnequipGoldBomb() end)
+            task.spawn(function() task.wait(0.1) GBJStartCooldown() end)
         end
     end
-
-    task.spawn(function()
-        task.wait(0.5)
-        gbjDebounce = false
-    end)
+    task.spawn(function() task.wait(0.5) gbjDebounce = false end)
 end
 
 local function IsHoldingGoldBomb()
     local character = LocalPlayer.Character
     if not character then return false end
     for _, goldName in ipairs(GOLD_BOMB_NAMES) do
-        if character:FindFirstChild(goldName) then
-            return true
-        end
+        if character:FindFirstChild(goldName) then return true end
     end
     return false
 end
@@ -1107,18 +891,14 @@ GoldBombJumpMaid:GiveTasks(
     end),
     Services.UserInputService.InputChanged:Connect(function(input)
         local data = gbjActiveTouches[input]
-        if data and (input.Position - data.startPosition).Magnitude > TAP_MOVEMENT_THRESHOLD then
-            data.moved = true
-        end
+        if data and (input.Position - data.startPosition).Magnitude > TAP_MOVEMENT_THRESHOLD then data.moved = true end
     end),
     Services.UserInputService.InputEnded:Connect(function(input, gp)
         if gp then gbjActiveTouches[input] = nil return end
         local data = gbjActiveTouches[input]
         if data and not data.moved and tick() - data.startTime <= TAP_TIME_THRESHOLD then
             if goldBombJumpEnabled and not gbjOnCooldown and not gbjDebounce then
-                if IsHoldingGoldBomb() and IsPlayerInAir() then
-                    FastGoldBombJump()
-                end
+                if IsHoldingGoldBomb() and IsPlayerInAir() then FastGoldBombJump() end
             end
         end
         gbjActiveTouches[input] = nil
@@ -1154,9 +934,7 @@ gbjSection:AddToggle("Enable GBJ Big Button", function(e)
     if e then
         AddBigButton("goldbombjump_big", "Gold Bomb Jump", FastGoldBombJump, true)
         local btn = BBSystem.Buttons["goldbombjump_big"]
-        if btn then
-            btn.Size = __UD2(0, gbjBigButtonSize, 0, gbjBigButtonSize * 0.375)
-        end
+        if btn then btn.Size = __UD2(0, gbjBigButtonSize, 0, gbjBigButtonSize * 0.375) end
     else
         DeleteBigButton("goldbombjump_big")
     end
@@ -1165,9 +943,7 @@ end)
 gbjSection:AddSlider("GBJ Big Button Size", 50, 300, 200, function(value)
     gbjBigButtonSize = value
     local btn = BBSystem.Buttons["goldbombjump_big"]
-    if btn then
-        btn.Size = __UD2(0, gbjBigButtonSize, 0, gbjBigButtonSize * 0.375)
-    end
+    if btn then btn.Size = __UD2(0, gbjBigButtonSize, 0, gbjBigButtonSize * 0.375) end
 end)
 
 gbjSection:AddToggle("Enable GBJ Bind Button", function(e)
