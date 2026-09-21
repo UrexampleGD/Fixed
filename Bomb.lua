@@ -540,12 +540,14 @@ hiddenGui.IgnoreGuiInset = true
 hiddenGui.Parent = GetSafeGuiRoot()
 RootMaid:GiveTask(hiddenGui)
 
-local _game = shared.game_name
+local _game = shared and shared.game_name or ""
+local isMM2 = (_game == "Murder Mystery 2") or (game.PlaceId == 142823291)
+local isMMM = (_game == "Murder Mystery Modded")
+local isMMV = (_game == "MMV") or (game.PlaceId == 116924926476457)
 
-if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" then
+if isMM2 or isMMM or isMMV then
 
-local mainTab = shared.CreateTab("Bomb Jump+", "/axioriasolver/testplugin/refs/heads/main/icon")
-local aboutSection = mainTab:AddSection("About", "Information")
+local aboutSection = shared.AddSection("About")
 
 aboutSection:AddParagraph("Bomb Jump+", "Plugin Made by @lzzzx")
 
@@ -566,9 +568,9 @@ aboutSection:AddToggle("Save Button Position", function(bool)
     end
 end)
 
-shared.Notify("Bomb Jump+ Successfully Loaded", 2)
+pcall(function() shared.Notify("Bomb Jump+ Successfully Loaded", 5) end)
 
-local section = mainTab:AddSection("Bomb Jump+", "Main")
+local section = shared.AddSection("Bomb Jump+")
 
 local CONFIG = {
     CooldownTime = 22.0,
@@ -905,9 +907,9 @@ end)
 
 section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
-if _game == "Murder Mystery Modded" or _game == "MMV" then
+if isMMM or isMMV then
 
-local gbjSection = mainTab:AddSection("Gold Bomb Jump+", "Gold")
+local gbjSection = shared.AddSection("Gold Bomb Jump+")
 
 local gbjOnCooldown = false
 local goldBombJumpEnabled = false
