@@ -42,6 +42,14 @@ function Maid:Destroy() self:DoCleaning() end
 
 local RootMaid = Maid.new()
 
+local shared = odh_shared_plugins
+if not shared and getgenv then
+    local gv = getgenv()
+    if type(gv) == "table" and type(gv.shared) == "table" then
+        shared = gv.shared
+    end
+end
+
 local Services = {
     Players = game:GetService("Players"),
     ReplicatedStorage = game:GetService("ReplicatedStorage"),
@@ -452,14 +460,18 @@ hiddenGui.IgnoreGuiInset = true
 hiddenGui.Parent = GetSafeGuiRoot()
 RootMaid:GiveTask(hiddenGui)
 
-local _game = odh_shared_plugins and odh_shared_plugins.game_name or ""
+if not shared or type(shared.CreateTab) ~= "function" then
+    return
+end
+
+local _game = shared.game_name or ""
 local isMM2 = (_game == "Murder Mystery 2") or (game.PlaceId == 142823291)
 local isMMM = (_game == "Murder Mystery Modded")
 local isMMV = (_game == "MMV") or (game.PlaceId == 116924926476457)
 
 if isMM2 or isMMM or isMMV then
 
-local mainTab = odh_shared_plugins.CreateTab("Bomb Jump+")
+local mainTab = shared.CreateTab("Bomb Jump+")
 
 local aboutSection = mainTab:AddSection("About", "Information")
 
@@ -478,7 +490,7 @@ aboutSection:AddToggle("Save Button Position", function(bool)
     end
 end)
 
-pcall(function() odh_shared_plugins.Notify("Bomb Jump+ Loaded", 2) end)
+pcall(function() shared.Notify("Bomb Jump+ Loaded", 2) end)
 
 local section = mainTab:AddSection("Bomb Jump+", "Main")
 
