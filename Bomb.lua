@@ -544,7 +544,8 @@ local _game = shared.game_name
 
 if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" then
 
-local aboutSection = shared.AddSection("About")
+local mainTab = shared.CreateTab("Bomb Jump+", "/axioriasolver/testplugin/refs/heads/main/icon")
+local aboutSection = mainTab:AddSection("About", "Information")
 
 aboutSection:AddParagraph("Bomb Jump+", "Plugin Made by @lzzzx")
 
@@ -565,9 +566,9 @@ aboutSection:AddToggle("Save Button Position", function(bool)
     end
 end)
 
-shared.Notify("Bomb Jump+ Successfully Loaded", 5)
+shared.Notify("Bomb Jump+ Successfully Loaded", 2)
 
-local section = shared.AddSection("Bomb Jump+")
+local section = mainTab:AddSection("Bomb Jump+", "Main")
 
 local CONFIG = {
     CooldownTime = 22.0,
@@ -906,7 +907,7 @@ section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
 if _game == "Murder Mystery Modded" or _game == "MMV" then
 
-local gbjSection = shared.AddSection("Gold Bomb Jump+")
+local gbjSection = mainTab:AddSection("Gold Bomb Jump+", "Gold")
 
 local gbjOnCooldown = false
 local goldBombJumpEnabled = false
