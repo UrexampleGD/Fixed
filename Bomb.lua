@@ -1014,21 +1014,21 @@ local function GetAnyGoldBomb()
     end
 
     for attempt = 1, 3 do
-        local success = pcall(function()
-            Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb")
-        end)
-        if success then
-            task.wait(0.1)
-            for _, goldName in ipairs(GOLD_BOMB_NAMES) do
-                local bomb = character:FindFirstChild(goldName)
-                if bomb then return true, bomb end
-                if backpack then
-                    bomb = backpack:FindFirstChild(goldName)
-                    if bomb then
-                        bomb.Parent = character
-                        task.wait(0.05)
-                        return true, bomb
-                    end
+        for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+            pcall(function()
+                Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer(goldName)
+            end)
+        end
+        task.wait(0.1)
+        for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+            local bomb = character:FindFirstChild(goldName)
+            if bomb then return true, bomb end
+            if backpack then
+                bomb = backpack:FindFirstChild(goldName)
+                if bomb then
+                    bomb.Parent = character
+                    task.wait(0.05)
+                    return true, bomb
                 end
             end
         end
