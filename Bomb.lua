@@ -875,7 +875,16 @@ local gbjBigButtonSize = 200
 local gbjBindButtonSize = 0.11
 local gbjBindButton = nil
 
-local GOLD_BOMB_NAME = "GoldFakeBomb"
+local GOLD_BOMB_NAMES = {"GoldFakeBomb", "GoldBomb"}
+
+local function FindGoldBomb(container)
+    if not container then return nil end
+    for _, name in ipairs(GOLD_BOMB_NAMES) do
+        local bomb = container:FindFirstChild(name)
+        if bomb then return bomb end
+    end
+    return nil
+end
 
 local GoldBombJumpMaid = Maid.new()
 RootMaid:GiveTask(GoldBombJumpMaid)
@@ -936,7 +945,7 @@ local function UnequipGoldBomb()
     task.spawn(function()
         local character = LocalPlayer.Character
         if character then
-            local bomb = character:FindFirstChild(GOLD_BOMB_NAME)
+            local bomb = FindGoldBomb(character)
             if bomb then
                 bomb.Parent = LocalPlayer.Backpack or character
             end
@@ -949,12 +958,12 @@ local function GetAnyGoldBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
 
-    local bomb = character:FindFirstChild(GOLD_BOMB_NAME)
+    local bomb = FindGoldBomb(character)
     if bomb then return true, bomb end
 
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
-        bomb = backpack:FindFirstChild(GOLD_BOMB_NAME)
+        bomb = FindGoldBomb(backpack)
         if bomb then
             bomb.Parent = character
             task.wait(0.05)
@@ -969,10 +978,10 @@ local function GetAnyGoldBomb()
         end)
         if success then
             task.wait(0.1)
-            bomb = character:FindFirstChild(GOLD_BOMB_NAME)
+            bomb = FindGoldBomb(character)
             if bomb then return true, bomb end
             if backpack then
-                bomb = backpack:FindFirstChild(GOLD_BOMB_NAME)
+                bomb = FindGoldBomb(backpack)
                 if bomb then
                     bomb.Parent = character
                     task.wait(0.05)
@@ -1035,7 +1044,7 @@ end
 local function IsHoldingGoldBomb()
     local character = LocalPlayer.Character
     if not character then return false end
-    return character:FindFirstChild(GOLD_BOMB_NAME) ~= nil
+    return FindGoldBomb(character) ~= nil
 end
 
 local gbjActiveTouches = {}
