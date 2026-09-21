@@ -56,7 +56,7 @@ end
 
 local RootMaid = Maid.new()
 
-local shared = odh_shared_plugins
+local odh = odh_shared_plugins
 
 local Services = {
     Players = game:GetService("Players"),
@@ -540,14 +540,16 @@ hiddenGui.IgnoreGuiInset = true
 hiddenGui.Parent = GetSafeGuiRoot()
 RootMaid:GiveTask(hiddenGui)
 
-local _game = shared and shared.game_name or ""
+local _game = odh and odh.game_name or ""
 local isMM2 = (_game == "Murder Mystery 2") or (game.PlaceId == 142823291)
 local isMMM = (_game == "Murder Mystery Modded")
 local isMMV = (_game == "MMV") or (game.PlaceId == 116924926476457)
 
 if isMM2 or isMMM or isMMV then
 
-local aboutSection = shared.CreateTab("About")
+local mainTab = odh.CreateTab("Bomb Jump+")
+
+local aboutSection = mainTab:AddSection("About", "Information")
 
 aboutSection:AddParagraph("Bomb Jump+", "Plugin Made by @lzzzx")
 
@@ -568,9 +570,9 @@ aboutSection:AddToggle("Save Button Position", function(bool)
     end
 end)
 
-pcall(function() shared.Notify("Bomb Jump+ Successfully Loaded", 5) end)
+pcall(function() odh.Notify("Bomb Jump+ Successfully Loaded", 2) end)
 
-local section = shared.CreateTab("Bomb Jump+")
+local section = mainTab:AddSection("Bomb Jump+", "Main")
 
 local CONFIG = {
     CooldownTime = 22.0,
@@ -909,7 +911,7 @@ section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
 if isMMM or isMMV then
 
-local gbjSection = shared.CreateTab("Gold Bomb Jump+")
+local gbjSection = mainTab:AddSection("Gold Bomb Jump+", "Gold")
 
 local gbjOnCooldown = false
 local goldBombJumpEnabled = false
