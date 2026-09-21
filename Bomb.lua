@@ -9,8 +9,8 @@ local table_insert = table.insert
 local Maid = {}
 Maid.__index = Maid
 
-function Maid.new() 
-    return setmetatable({_tasks = {}, _destroyed = false}, Maid) 
+function Maid.new()
+    return setmetatable({_tasks = {}, _destroyed = false}, Maid)
 end
 
 function Maid:GiveTask(task)
@@ -43,12 +43,6 @@ function Maid:Destroy() self:DoCleaning() end
 local RootMaid = Maid.new()
 
 local shared = odh_shared_plugins
-if not shared and getgenv then
-    local gv = getgenv()
-    if type(gv) == "table" and type(gv.shared) == "table" then
-        shared = gv.shared
-    end
-end
 
 local Services = {
     Players = game:GetService("Players"),
@@ -460,11 +454,7 @@ hiddenGui.IgnoreGuiInset = true
 hiddenGui.Parent = GetSafeGuiRoot()
 RootMaid:GiveTask(hiddenGui)
 
-if not shared or type(shared.CreateTab) ~= "function" then
-    return
-end
-
-local _game = shared.game_name or ""
+local _game = shared and shared.game_name or ""
 local isMM2 = (_game == "Murder Mystery 2") or (game.PlaceId == 142823291)
 local isMMM = (_game == "Murder Mystery Modded")
 local isMMV = (_game == "MMV") or (game.PlaceId == 116924926476457)
