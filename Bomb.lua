@@ -3,7 +3,6 @@
 -- # If this thing has bugs, report it :)
 -- # Have fun using this skidded thing!
 -- # Your Welcome!
--- # Fucm.
 
 local table_insert = table.insert
 
@@ -68,7 +67,8 @@ local Services = {
     CoreGui = game:GetService("CoreGui"),
     Workspace = game:GetService("Workspace"),
     TweenService = game:GetService("TweenService"),
-    SoundService = game:GetService("SoundService")
+    SoundService = game:GetService("SoundService"),
+    HttpService = game:GetService("HttpService")
 }
 
 local LocalPlayer = Services.Players.LocalPlayer
@@ -92,12 +92,42 @@ local __UIS  = getfserv("UserInputService")
 local __PLRS = getfserv("Players")
 local __TS   = getfserv("TweenService")
 
+local saveButtonPositions = false
+local POSITION_FILE = "bombjump_ui_positions.json"
+
+local function LoadPositions()
+    local ok, content = pcall(readfile, POSITION_FILE)
+    if ok and content and content ~= "" then
+        local decOk, data = pcall(function() return Services.HttpService:JSONDecode(content) end)
+        if decOk and type(data) == "table" then return data end
+    end
+    return {}
+end
+
+local function SavePosition(id, pos)
+    if not saveButtonPositions then return end
+    local positions = LoadPositions()
+    positions[id] = {XScale = pos.X.Scale, XOffset = pos.X.Offset, YScale = pos.Y.Scale, YOffset = pos.Y.Offset}
+    pcall(function()
+        writefile(POSITION_FILE, Services.HttpService:JSONEncode(positions))
+    end)
+end
+
+local function ApplySavedPosition(gui, id)
+    if not saveButtonPositions then return end
+    local positions = LoadPositions()
+    local p = positions[id]
+    if p then
+        gui.Position = __UD2(p.XScale or 0, p.XOffset or 0, p.YScale or 0, p.YOffset or 0)
+    end
+end
+
 local BBSystem = {Buttons = {}, Connections = {}}
 
 local function bb_safecallback(callback)
     if not callback then return end
     local ok, err = xpcall(callback, function(e) return debug.traceback(e) end)
-    if not ok then warn("[BB ERROR] " .. tostring(err)) end
+    if not ok then end
 end
 
 local function BB_GetStorage()
@@ -162,6 +192,7 @@ local function BB_MakeDraggable(gui, func, ripple, sound)
                     dragging = false
                     __TS:Create(gui, tInfo, {Size = normalSize, TextSize = normalTxtSize}):Play()
                     if not hasMoved then bb_safecallback(func) end
+                    SavePosition(gui.Name, gui.Position)
                     rel:Disconnect()
                 end
             end)
@@ -260,6 +291,7 @@ local function AddBigButton(id, text, func, isGold)
         gradient.Rotation = (gradient.Rotation + 1) % 360
     end)
     BBSystem.Buttons[id] = bb
+    ApplySavedPosition(bb, id)
     return bb
 end
 
@@ -311,7 +343,7 @@ local __GOLD_WAIT_COLOR = ColorSequence.new({
 local function bind_safecallback(callback)
     if not callback then return end
     local ok, err = xpcall(callback, function(e) return debug.traceback(e) end)
-    if not ok then warn("[BIND ERROR] " .. tostring(err)) end
+    if not ok then end
 end
 
 local function Bind_GetStorage()
@@ -364,6 +396,7 @@ local function Bind_MakeDraggable(gui, maid, ripple, sound, clickFunc)
                     if not hasMoved then
                         bind_safecallback(clickFunc)
                     end
+                    SavePosition(gui.Name, gui.Position)
                     rel:Disconnect()
                 end
             end)
@@ -459,6 +492,7 @@ function BindableButtons.AddBButton(id, text, clickFunc, isGold)
     BindableButtons.Buttons[id] = ImageButton
     BindableButtons.Maids[id] = buttonMaid
     BindableButtons.Count = BindableButtons.Count + 1
+    ApplySavedPosition(ImageButton, id)
     return ImageButton
 end
 
@@ -508,7 +542,7 @@ RootMaid:GiveTask(hiddenGui)
 
 local _game = shared.game_name
 
-if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" then
+if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" then
 
 local aboutSection = shared.AddSection("About")
 
@@ -517,6 +551,18 @@ aboutSection:AddParagraph("Bomb Jump+", "Plugin Made by @lzzzx")
 aboutSection:AddToggle("Mute Button SFX", function(bool)
     muteButtonSounds = bool
     UpdateAllButtonSounds()
+end)
+
+aboutSection:AddToggle("Save Button Position", function(bool)
+    saveButtonPositions = bool
+    if bool then
+        for id, btn in pairs(BBSystem.Buttons) do
+            ApplySavedPosition(btn, id)
+        end
+        for id, btn in pairs(BindableButtons.Buttons) do
+            ApplySavedPosition(btn, id)
+        end
+    end
 end)
 
 shared.Notify("Bomb Jump+ Successfully Loaded", 5)
@@ -654,7 +700,6 @@ local function UnequipBomb()
     end)
 end
 
--- FIX: improved GetAnyBomb with retry (optional, but consistent)
 local function GetAnyBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
@@ -676,7 +721,6 @@ local function GetAnyBomb()
         end
     end
 
-    -- Attempt to spawn via remote with retries
     for attempt = 1, 3 do
         pcall(function()
             Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb")
@@ -700,7 +744,6 @@ local function GetAnyBomb()
     return false, nil
 end
 
--- FIX: longer equip time and improved bomb retrieval
 local function FastBombJump()
     if not IsPlayerInAir() then return end
     if onCooldown or debounce or justRespawned then return end
@@ -728,7 +771,6 @@ local function FastBombJump()
 
             MakeCharacterJump()
 
-            -- Keep bomb equipped for a while before unequipping
             task.spawn(function()
                 task.wait(CONFIG.EquipDelay)
                 UnequipBomb()
@@ -862,7 +904,7 @@ end)
 
 section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
-if _game == "Murder Mystery Modded" then
+if _game == "Murder Mystery Modded" or _game == "MMV" then
 
 local gbjSection = shared.AddSection("Gold Bomb Jump+")
 
@@ -876,15 +918,6 @@ local gbjBindButtonSize = 0.11
 local gbjBindButton = nil
 
 local GOLD_BOMB_NAMES = {"GoldFakeBomb", "GoldBomb"}
-
-local function FindGoldBomb(container)
-    if not container then return nil end
-    for _, name in ipairs(GOLD_BOMB_NAMES) do
-        local bomb = container:FindFirstChild(name)
-        if bomb then return bomb end
-    end
-    return nil
-end
 
 local GoldBombJumpMaid = Maid.new()
 RootMaid:GiveTask(GoldBombJumpMaid)
@@ -945,47 +978,54 @@ local function UnequipGoldBomb()
     task.spawn(function()
         local character = LocalPlayer.Character
         if character then
-            local bomb = FindGoldBomb(character)
-            if bomb then
-                bomb.Parent = LocalPlayer.Backpack or character
+            for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+                local bomb = character:FindFirstChild(goldName)
+                if bomb then
+                    bomb.Parent = LocalPlayer.Backpack or character
+                    break
+                end
             end
         end
     end)
 end
 
--- FIX: improved GetAnyGoldBomb with retries
 local function GetAnyGoldBomb()
     local character = LocalPlayer.Character
     if not character then return false, nil end
 
-    local bomb = FindGoldBomb(character)
-    if bomb then return true, bomb end
+    for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+        local bomb = character:FindFirstChild(goldName)
+        if bomb then return true, bomb end
+    end
 
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
-        bomb = FindGoldBomb(backpack)
-        if bomb then
-            bomb.Parent = character
-            task.wait(0.05)
-            return true, bomb
+        for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+            local bomb = backpack:FindFirstChild(goldName)
+            if bomb then
+                bomb.Parent = character
+                task.wait(0.05)
+                return true, bomb
+            end
         end
     end
 
-    -- Try to spawn gold bomb with retries
     for attempt = 1, 3 do
         local success = pcall(function()
             Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb")
         end)
         if success then
             task.wait(0.1)
-            bomb = FindGoldBomb(character)
-            if bomb then return true, bomb end
-            if backpack then
-                bomb = FindGoldBomb(backpack)
-                if bomb then
-                    bomb.Parent = character
-                    task.wait(0.05)
-                    return true, bomb
+            for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+                local bomb = character:FindFirstChild(goldName)
+                if bomb then return true, bomb end
+                if backpack then
+                    bomb = backpack:FindFirstChild(goldName)
+                    if bomb then
+                        bomb.Parent = character
+                        task.wait(0.05)
+                        return true, bomb
+                    end
                 end
             end
         end
@@ -1022,7 +1062,6 @@ local function FastGoldBombJump()
 
             GBJMakeCharacterJump()
 
-            -- Keep gold bomb equipped for a while before unequipping
             task.spawn(function()
                 task.wait(CONFIG.EquipDelay)
                 UnequipGoldBomb()
@@ -1044,7 +1083,12 @@ end
 local function IsHoldingGoldBomb()
     local character = LocalPlayer.Character
     if not character then return false end
-    return FindGoldBomb(character) ~= nil
+    for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+        if character:FindFirstChild(goldName) then
+            return true
+        end
+    end
+    return false
 end
 
 local gbjActiveTouches = {}
