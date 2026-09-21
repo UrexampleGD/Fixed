@@ -547,8 +547,7 @@ local isMMV = (_game == "MMV") or (game.PlaceId == 116924926476457)
 
 if isMM2 or isMMM or isMMV then
 
-local mainTab = shared.CreateTab("Bomb Jump+")
-local aboutSection = mainTab:AddSection("About")
+local aboutSection = shared.CreateTab("About")
 
 aboutSection:AddParagraph("Bomb Jump+", "Plugin Made by @lzzzx")
 
@@ -571,7 +570,7 @@ end)
 
 pcall(function() shared.Notify("Bomb Jump+ Successfully Loaded", 5) end)
 
-local section = mainTab:AddSection("Bomb Jump+")
+local section = shared.CreateTab("Bomb Jump+")
 
 local CONFIG = {
     CooldownTime = 22.0,
@@ -910,7 +909,7 @@ section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
 if isMMM or isMMV then
 
-local gbjSection = mainTab:AddSection("Gold Bomb Jump+")
+local gbjSection = shared.CreateTab("Gold Bomb Jump+")
 
 local gbjOnCooldown = false
 local goldBombJumpEnabled = false
