@@ -6,11 +6,7 @@
 
 local shared = odh_shared_plugins
 
-task.spawn(function()
-    pcall(function()
-        shared.load_from_github_url("/aux0on/CrashHandler/refs/heads/main/Prevention.lua")
-    end)
-end)
+local table_insert = table.insert
 
 local Maid = {}
 Maid.__index = Maid
@@ -21,7 +17,7 @@ end
 
 function Maid:GiveTask(task)
     if self._destroyed then self:_cleanupTask(task) return end
-    table.insert(self._tasks, task)
+    table_insert(self._tasks, task)
     return task
 end
 
@@ -450,7 +446,7 @@ local _game = shared.game_name
 
 if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" then
 
-local BombJump = shared.CreateTab("Bomb Jump+")
+local BombJump = shared.CreateTab("Bomb Jump+", "/UrexampleGD/Fixed/refs/heads/main/icon")
 
 local aboutSection = BombJump:AddSection("About", "Information")
 
