@@ -898,7 +898,11 @@ GoldBombJumpMaid:GiveTasks(
         gbjJustRespawned = false
         if autoGetGoldBomb then
             task.wait(0.2)
-            pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb") end)
+            for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+                pcall(function()
+                    Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer(goldName)
+                end)
+            end
             task.wait(0.1)
             UnequipGoldBomb()
         end
@@ -911,7 +915,11 @@ gbjSection:AddToggle("Enable Auto Gold Bomb Jump", function(bool) goldBombJumpEn
 gbjSection:AddToggle("Auto-Get Gold Bomb", function(bool)
     autoGetGoldBomb = bool
     if bool then
-        pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb") end)
+        for _, goldName in ipairs(GOLD_BOMB_NAMES) do
+            pcall(function()
+                Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer(goldName)
+            end)
+        end
         task.wait(0.1)
         UnequipGoldBomb()
     end
