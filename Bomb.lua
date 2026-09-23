@@ -1,47 +1,52 @@
+-- # Credits to @187 for the actual code
+-- # This was just a fixed version with some improvement.
+-- # If this thing has bugs, report it :)
+-- # Have fun using this skidded thing!
+-- # Your Welcome!
+
 local shared = odh_shared_plugins
-if not shared or type(shared.CreateTab) ~= "function" then
-    warn("[Bomb Jump+] Load through the current Overdrive H plugin menu.")
-    return
-end
 
-local ok, mainTab = pcall(function()
-    return shared.CreateTab("Bomb Jump+")
+task.spawn(function()
+    pcall(function()
+        shared.load_from_github_url("/aux0on/CrashHandler/refs/heads/main/Prevention.lua")
+    end)
 end)
-if not ok or not mainTab then
-    warn("[Bomb Jump+] CreateTab failed: " .. tostring(mainTab))
-    return
+
+local Maid = {}
+Maid.__index = Maid
+
+function Maid.new()
+    return setmetatable({_tasks = {}, _destroyed = false}, Maid)
 end
 
-local ok2, aboutSection = pcall(function()
-    return mainTab:AddSection("About", "Information")
-end)
-if not ok2 or not aboutSection then
-    warn("[Bomb Jump+] AddSection (About) failed: " .. tostring(aboutSection))
-    return
+function Maid:GiveTask(task)
+    if self._destroyed then self:_cleanupTask(task) return end
+    table.insert(self._tasks, task)
+    return task
 end
 
-local ok3, section = pcall(function()
-    return mainTab:AddSection("Bomb Jump+", "Main")
-end)
-if not ok3 or not section then
-    warn("[Bomb Jump+] AddSection (Bomb Jump+) failed: " .. tostring(section))
-    return
+function Maid:GiveTasks(...)
+    for _, task in ipairs({...}) do self:GiveTask(task) end
 end
 
-local ENV
-if getgenv then ENV = getgenv() else ENV = _G end
-
-if ENV.__BombJumpConnections then
-    for _, conn in ipairs(ENV.__BombJumpConnections) do
-        pcall(function() conn:Disconnect() end)
-    end
+function Maid:_cleanupTask(task)
+    local taskType = typeof(task)
+    if taskType == "RBXScriptConnection" then task:Disconnect()
+    elseif taskType == "Instance" then task:Destroy()
+    elseif taskType == "function" then task()
+    elseif taskType == "table" and type(task.Destroy) == "function" then task:Destroy() end
 end
-ENV.__BombJumpConnections = {}
 
-local function regConn(conn)
-    if conn then table.insert(ENV.__BombJumpConnections, conn) end
-    return conn
+function Maid:DoCleaning()
+    if self._destroyed then return end
+    self._destroyed = true
+    for _, task in ipairs(self._tasks) do self:_cleanupTask(task) end
+    self._tasks = {}
 end
+
+function Maid:Destroy() self:DoCleaning() end
+
+local RootMaid = Maid.new()
 
 local Services = {
     Players = game:GetService("Players"),
@@ -128,7 +133,7 @@ local function BB_MakeDraggable(gui, func, ripple, sound)
     local hasMoved = false
     local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-    regConn(gui.InputBegan:Connect(function(input)
+    gui.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging, hasMoved = true, false
             dragStart, startPos = input.Position, gui.Position
@@ -153,19 +158,19 @@ local function BB_MakeDraggable(gui, func, ripple, sound)
                 end
             end)
         end
-    end))
-    regConn(gui.InputChanged:Connect(function(input)
+    end)
+    gui.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
-    end))
-    regConn(__UIS.InputChanged:Connect(function(input)
+    end)
+    __UIS.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
             if delta.Magnitude > 7 then hasMoved = true end
             gui.Position = __UD2(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
-    end))
+    end)
 end
 
 local muteButtonSounds = false
@@ -234,9 +239,9 @@ local function AddBigButton(id, text, func, isGold)
     sound.Parent = bb
 
     BB_MakeDraggable(bb, func, ripple, sound)
-    BBSystem.Connections[id] = regConn(__RS.RenderStepped:Connect(function()
+    BBSystem.Connections[id] = __RS.RenderStepped:Connect(function()
         gradient.Rotation = (gradient.Rotation + 1) % 360
-    end))
+    end)
     BBSystem.Buttons[id] = bb
     ApplySavedPosition(bb, id)
     return bb
@@ -441,29 +446,13 @@ local function UpdateBButtonText(id, text, isWaiting, isGold)
     end
 end
 
-BindableButtons.AddBButton = AddBButton
-BindableButtons.DeleteBButton = DeleteBButton
-BindableButtons.UpdateBButtonText = UpdateBButtonText
+local _game = shared.game_name
 
-local function GetSafeGuiRoot()
-    local success, result = pcall(function() return gethui() end)
-    if success and result and typeof(result) == "Instance" then return result end
-    return Services.CoreGui
-end
+if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" then
 
-local hiddenGui = Instance.new("ScreenGui")
-hiddenGui.Name = "HiddenGui"
-hiddenGui.ResetOnSpawn = false
-hiddenGui.IgnoreGuiInset = true
-hiddenGui.Parent = GetSafeGuiRoot()
-regConn(hiddenGui)
+local BombJump = shared.CreateTab("Bomb Jump+")
 
-local _game = shared.game_name or ""
-local isMM2 = (_game == "Murder Mystery 2") or (game.PlaceId == 142823291)
-local isMMM = (_game == "Murder Mystery Modded")
-local isMMV = (_game == "MMV") or (game.PlaceId == 116924926476457)
-
-if isMM2 or isMMM or isMMV then
+local aboutSection = BombJump:AddSection("About", "Information")
 
 aboutSection:AddParagraph("Bomb Jump+", "Plugin Made by @lzzzx")
 
@@ -482,6 +471,8 @@ end)
 
 pcall(function() shared.Notify("Bomb Jump+ Loaded", 2) end)
 
+local section = BombJump:AddSection("Bomb Jump+", "MM2 / MMV")
+
 local CONFIG = {
     CooldownTime = 22.0,
     LaunchPower = 58,
@@ -499,6 +490,9 @@ local bindButtonSize = 0.11
 local bjBindButton = nil
 
 local BOMB_NAMES = {"FakeBomb"}
+
+local BombJumpMaid = Maid.new()
+RootMaid:GiveTask(BombJumpMaid)
 
 local Sounds = {Click = Instance.new("Sound"), Cooldown = Instance.new("Sound")}
 Sounds.Click.SoundId = "rbxassetid://6895079853"
@@ -648,39 +642,41 @@ local activeTouches = {}
 local TAP_MOVEMENT_THRESHOLD = 10
 local TAP_TIME_THRESHOLD = 0.3
 
-regConn(Services.UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        activeTouches[input] = {startPosition = input.Position, startTime = tick(), moved = false}
-    end
-end))
-regConn(Services.UserInputService.InputChanged:Connect(function(input)
-    local data = activeTouches[input]
-    if data and (input.Position - data.startPosition).Magnitude > TAP_MOVEMENT_THRESHOLD then data.moved = true end
-end))
-regConn(Services.UserInputService.InputEnded:Connect(function(input, gp)
-    if gp then activeTouches[input] = nil return end
-    local data = activeTouches[input]
-    if data and not data.moved and tick() - data.startTime <= TAP_TIME_THRESHOLD then
-        if bombJumpEnabled and not onCooldown and not debounce then
-            if IsHoldingBomb() and IsPlayerInAir() then FastBombJump() end
+BombJumpMaid:GiveTasks(
+    Services.UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            activeTouches[input] = {startPosition = input.Position, startTime = tick(), moved = false}
         end
-    end
-    activeTouches[input] = nil
-end))
-regConn(LocalPlayer.CharacterAdded:Connect(function()
-    ResetCooldown()
-    activeTouches = {}
-    justRespawned = true
-    task.wait(1)
-    justRespawned = false
-    if autoGetBomb then
-        task.wait(0.2)
-        pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb") end)
-        task.wait(0.1)
-        UnequipBomb()
-    end
-end))
+    end),
+    Services.UserInputService.InputChanged:Connect(function(input)
+        local data = activeTouches[input]
+        if data and (input.Position - data.startPosition).Magnitude > TAP_MOVEMENT_THRESHOLD then data.moved = true end
+    end),
+    Services.UserInputService.InputEnded:Connect(function(input, gp)
+        if gp then activeTouches[input] = nil return end
+        local data = activeTouches[input]
+        if data and not data.moved and tick() - data.startTime <= TAP_TIME_THRESHOLD then
+            if bombJumpEnabled and not onCooldown and not debounce then
+                if IsHoldingBomb() and IsPlayerInAir() then FastBombJump() end
+            end
+        end
+        activeTouches[input] = nil
+    end),
+    LocalPlayer.CharacterAdded:Connect(function()
+        ResetCooldown()
+        activeTouches = {}
+        justRespawned = true
+        task.wait(1)
+        justRespawned = false
+        if autoGetBomb then
+            task.wait(0.2)
+            pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("FakeBomb") end)
+            task.wait(0.1)
+            UnequipBomb()
+        end
+    end)
+)
 
 section:AddLabel("Bomb Jump Options")
 section:AddToggle("Enable Auto Bomb Jump", function(bool) bombJumpEnabled = bool end)
@@ -735,15 +731,9 @@ end)
 
 section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
-if isMMM or isMMV then
+if _game == "Murder Mystery Modded" or _game == "MMV" then
 
-local ok4, gbjSection = pcall(function()
-    return mainTab:AddSection("Gold Bomb Jump+", "Gold")
-end)
-if not ok4 or not gbjSection then
-    warn("[Bomb Jump+] AddSection (Gold Bomb Jump+) failed: " .. tostring(gbjSection))
-    return
-end
+local gbjSection = BombJump:AddSection("Gold Bomb Jump+", "MMV")
 
 local gbjOnCooldown = false
 local goldBombJumpEnabled = false
@@ -755,6 +745,9 @@ local gbjBindButtonSize = 0.11
 local gbjBindButton = nil
 
 local GOLD_BOMB_NAMES = {"GoldFakeBomb", "GoldBomb"}
+
+local GoldBombJumpMaid = Maid.new()
+RootMaid:GiveTask(GoldBombJumpMaid)
 
 local function GBJResetCooldown()
     gbjOnCooldown = false
@@ -880,39 +873,41 @@ end
 
 local gbjActiveTouches = {}
 
-regConn(Services.UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        gbjActiveTouches[input] = {startPosition = input.Position, startTime = tick(), moved = false}
-    end
-end))
-regConn(Services.UserInputService.InputChanged:Connect(function(input)
-    local data = gbjActiveTouches[input]
-    if data and (input.Position - data.startPosition).Magnitude > TAP_MOVEMENT_THRESHOLD then data.moved = true end
-end))
-regConn(Services.UserInputService.InputEnded:Connect(function(input, gp)
-    if gp then gbjActiveTouches[input] = nil return end
-    local data = gbjActiveTouches[input]
-    if data and not data.moved and tick() - data.startTime <= TAP_TIME_THRESHOLD then
-        if goldBombJumpEnabled and not gbjOnCooldown and not gbjDebounce then
-            if IsHoldingGoldBomb() and IsPlayerInAir() then FastGoldBombJump() end
+GoldBombJumpMaid:GiveTasks(
+    Services.UserInputService.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            gbjActiveTouches[input] = {startPosition = input.Position, startTime = tick(), moved = false}
         end
-    end
-    gbjActiveTouches[input] = nil
-end))
-regConn(LocalPlayer.CharacterAdded:Connect(function()
-    GBJResetCooldown()
-    gbjActiveTouches = {}
-    gbjJustRespawned = true
-    task.wait(1)
-    gbjJustRespawned = false
-    if autoGetGoldBomb then
-        task.wait(0.2)
-        pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb") end)
-        task.wait(0.1)
-        UnequipGoldBomb()
-    end
-end))
+    end),
+    Services.UserInputService.InputChanged:Connect(function(input)
+        local data = gbjActiveTouches[input]
+        if data and (input.Position - data.startPosition).Magnitude > TAP_MOVEMENT_THRESHOLD then data.moved = true end
+    end),
+    Services.UserInputService.InputEnded:Connect(function(input, gp)
+        if gp then gbjActiveTouches[input] = nil return end
+        local data = gbjActiveTouches[input]
+        if data and not data.moved and tick() - data.startTime <= TAP_TIME_THRESHOLD then
+            if goldBombJumpEnabled and not gbjOnCooldown and not gbjDebounce then
+                if IsHoldingGoldBomb() and IsPlayerInAir() then FastGoldBombJump() end
+            end
+        end
+        gbjActiveTouches[input] = nil
+    end),
+    LocalPlayer.CharacterAdded:Connect(function()
+        GBJResetCooldown()
+        gbjActiveTouches = {}
+        gbjJustRespawned = true
+        task.wait(1)
+        gbjJustRespawned = false
+        if autoGetGoldBomb then
+            task.wait(0.2)
+            pcall(function() Services.ReplicatedStorage.Remotes.Extras.ReplicateToy:InvokeServer("GoldFakeBomb") end)
+            task.wait(0.1)
+            UnequipGoldBomb()
+        end
+    end)
+)
 
 gbjSection:AddLabel("Gold Bomb Jump Options")
 gbjSection:AddToggle("Enable Auto Gold Bomb Jump", function(bool) goldBombJumpEnabled = bool end)
