@@ -446,7 +446,7 @@ local _game = shared.game_name
 
 if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" or game.PlaceId == 93017634738276 then
 
-local BombJump = shared.CreateTab("Bomb Jump+", "/UrexampleGD/Fixed/refs/heads/main/icon")
+local BombJump = shared.CreateTab("Bomb Jump+", "/UrexampleGD/Fixed/refs/heads/main/Screenshot_20260922_193309-removebg-preview.png")
 
 local aboutSection = BombJump:AddSection("About", "Information")
 
