@@ -444,7 +444,7 @@ end
 
 local _game = shared.game_name
 
-if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" then
+if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" or game.PlaceId == 93017634738276 then
 
 local BombJump = shared.CreateTab("Bomb Jump+", "/UrexampleGD/Fixed/refs/heads/main/icon")
 
@@ -727,7 +727,7 @@ end)
 
 section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
-if _game == "Murder Mystery Modded" or _game == "MMV" then
+if _game == "Murder Mystery Modded" or _game == "MMV" or game.PlaceId == 93017634738276 then
 
 local gbjSection = BombJump:AddSection("Gold Bomb Jump+", "MMV")
 
