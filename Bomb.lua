@@ -4,14 +4,6 @@
 -- # Have fun using this skidded thing!
 -- # Your Welcome!
 
-local shared = odh_shared_plugins
-
-task.spawn(function()
-    pcall(function()
-        shared.load_from_github_url("/aux0on/CrashHandler/refs/heads/main/Prevention.lua")
-    end)
-end)
-
 local table_insert = table.insert
 
 local Maid = {}
@@ -49,6 +41,16 @@ end
 function Maid:Destroy() self:DoCleaning() end
 
 local RootMaid = Maid.new()
+
+local shared = odh_shared_plugins
+
+task.spawn(function()
+    pcall(function()
+        shared.load_from_github_url("/aux0on/CrashHandler/refs/heads/main/Prevention.lua")
+    end)
+end)
+
+if shared.game_name ~= "Murder Mystery 2" and shared.game_name ~= "Murder Mystery Modded" then return end
 
 local Services = {
     Players = game:GetService("Players"),
@@ -448,11 +450,20 @@ local function UpdateBButtonText(id, text, isWaiting, isGold)
     end
 end
 
-local _game = shared.game_name
+local function GetSafeGuiRoot()
+    local success, result = pcall(function() return gethui() end)
+    if success and result and typeof(result) == "Instance" then return result end
+    return Services.CoreGui
+end
 
-if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" or game.PlaceId == 93017634738276 then
+local hiddenGui = Instance.new("ScreenGui")
+hiddenGui.Name = "HiddenGui"
+hiddenGui.ResetOnSpawn = false
+hiddenGui.IgnoreGuiInset = true
+hiddenGui.Parent = GetSafeGuiRoot()
+RootMaid:GiveTask(hiddenGui)
 
-local BombJump = shared.CreateTab("Bomb Jump+")
+local BombJump = shared.CreateTab("Bomb Jump+", "/UrexampleGD/Fixed/refs/heads/main/icon")
 
 local aboutSection = BombJump:AddSection("About", "Information")
 
@@ -733,7 +744,7 @@ end)
 
 section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
-if _game == "Murder Mystery Modded" or _game == "MMV" or game.PlaceId == 93017634738276 then
+if shared.game_name == "Murder Mystery Modded" or shared.game_name == "MMV" then
 
 local gbjSection = BombJump:AddSection("Gold Bomb Jump+", "MMV")
 
@@ -971,7 +982,5 @@ gbjSection:AddSlider("GBJ Bind Button Size", 5, 25, 11, function(value)
 end)
 
 gbjSection:AddKeybind("Gold Bomb Jump Keybind", "G", FastGoldBombJump)
-
-end
 
 end
