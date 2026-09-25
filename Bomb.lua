@@ -50,8 +50,6 @@ task.spawn(function()
     end)
 end)
 
-if shared.game_name ~= "Murder Mystery 2" and shared.game_name ~= "Murder Mystery Modded" then return end
-
 local Services = {
     Players = game:GetService("Players"),
     ReplicatedStorage = game:GetService("ReplicatedStorage"),
@@ -450,19 +448,6 @@ local function UpdateBButtonText(id, text, isWaiting, isGold)
     end
 end
 
-local function GetSafeGuiRoot()
-    local success, result = pcall(function() return gethui() end)
-    if success and result and typeof(result) == "Instance" then return result end
-    return Services.CoreGui
-end
-
-local hiddenGui = Instance.new("ScreenGui")
-hiddenGui.Name = "HiddenGui"
-hiddenGui.ResetOnSpawn = false
-hiddenGui.IgnoreGuiInset = true
-hiddenGui.Parent = GetSafeGuiRoot()
-RootMaid:GiveTask(hiddenGui)
-
 local BombJump = shared.CreateTab("Bomb Jump+", "/UrexampleGD/Fixed/refs/heads/main/icon")
 
 local aboutSection = BombJump:AddSection("About", "Information")
@@ -744,8 +729,6 @@ end)
 
 section:AddKeybind("Bomb Jump Keybind", "E", FastBombJump)
 
-if shared.game_name == "Murder Mystery Modded" or shared.game_name == "MMV" then
-
 local gbjSection = BombJump:AddSection("Gold Bomb Jump+", "MMV")
 
 local gbjOnCooldown = false
@@ -982,5 +965,3 @@ gbjSection:AddSlider("GBJ Bind Button Size", 5, 25, 11, function(value)
 end)
 
 gbjSection:AddKeybind("Gold Bomb Jump Keybind", "G", FastGoldBombJump)
-
-end
