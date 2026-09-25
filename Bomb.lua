@@ -4,6 +4,15 @@
 -- # Have fun using this skidded thing!
 -- # Your Welcome!
 
+local shared = odh_shared_plugins
+
+-- Load the required CrashHandler to prevent silent failures.
+task.spawn(function()
+    pcall(function()
+        shared.load_from_github_url("/aux0on/CrashHandler/refs/heads/main/Prevention.lua")
+    end)
+end)
+
 local table_insert = table.insert
 
 local Maid = {}
@@ -41,14 +50,6 @@ end
 function Maid:Destroy() self:DoCleaning() end
 
 local RootMaid = Maid.new()
-
-local shared = odh_shared_plugins
-
-task.spawn(function()
-    pcall(function()
-        shared.load_from_github_url("/aux0on/CrashHandler/refs/heads/main/Prevention.lua")
-    end)
-end)
 
 local Services = {
     Players = game:GetService("Players"),
@@ -452,7 +453,8 @@ local _game = shared.game_name
 
 if _game == "Murder Mystery 2" or _game == "Murder Mystery Modded" or _game == "MMV" or game.PlaceId == 93017634738276 then
 
-local BombJump = shared.CreateTab("Bomb Jump+", "/UrexampleGD/Fixed/refs/heads/main/icon")
+-- Icon path is now correct: file must be a .png and path must be stripped of URL and extension
+local BombJump = shared.CreateTab("Bomb Jump+", "/UrexampleGD/Fixed/refs/heads/main/Smugbombb")
 
 local aboutSection = BombJump:AddSection("About", "Information")
 
